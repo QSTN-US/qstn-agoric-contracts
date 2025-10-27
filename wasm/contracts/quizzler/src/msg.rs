@@ -68,6 +68,7 @@ pub struct SurveyResponse {
     pub participants_rewarded: u32,
     pub survey_hash: Binary,
     pub amount_to_fund: u128,
+    pub is_cancelled: bool,
 }
 
 /// Message type for `query` entry_point
@@ -96,7 +97,7 @@ pub enum QueryMsg {
     PayRewardsProof {
         token: String,
         time_to_expire: Expiration,
-        survey_id: Vec<String>,
+        survey_ids: Vec<String>,
         participants: Vec<String>,
     },
     #[returns(SurveyResponse)]

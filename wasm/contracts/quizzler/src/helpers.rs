@@ -1,7 +1,10 @@
 use crate::error::ContractError;
 use crate::msg::Manager;
 use crate::state::{ManagerInfo, CONFIG, MANAGERS, USED_PROOF_TOKENS};
-use cosmwasm_std::{Addr, Api, Binary, Deps, DepsMut, Env, StdResult};
+use cosmwasm_std::{
+    Addr, Api, BalanceResponse, BankQuery, Binary, Deps, DepsMut, Env, QuerierWrapper,
+    QueryRequest, StdResult, Uint256,
+};
 use cw_utils::Expiration;
 
 pub fn map_validate(api: &dyn Api, managers: &[Manager]) -> StdResult<Vec<ManagerInfo>> {
@@ -17,8 +20,8 @@ pub fn map_validate(api: &dyn Api, managers: &[Manager]) -> StdResult<Vec<Manage
         .collect()
 }
 
-pub fn pre_auth_validations(
-    deps: &DepsMut,
+pub fn auth_validations(
+    deps: &mut DepsMut,
     env: &Env,
     token: String,
     message: Binary,
@@ -26,7 +29,6 @@ pub fn pre_auth_validations(
     time_to_expire: Expiration,
     signature: Binary,
 ) -> StdResult<(), ContractError> {
-    // Check expiration
     if time_to_expire.is_expired(&env.block) {
         return Err(ContractError::ProofExpired {});
     }
@@ -59,6 +61,9 @@ pub fn pre_auth_validations(
 
     let result = deps.api.ed25519_verify(&message, &signature, &pub_key)?;
 
+    // mark proof token as used
+    USED_PROOF_TOKENS.save(deps.storage, &token, &true)?;
+
     if !result {
         return Err(ContractError::InvalidMessageHash {});
     }
@@ -73,4 +78,16 @@ pub fn check_is_contract_owner(deps: Deps, sender: Addr) -> Result<(), ContractE
     } else {
         Ok(())
     }
+}
+
+pub fn query_contract_balance(
+    querier: &QuerierWrapper,
+    addr: &Addr,
+    denom: &str,
+) -> StdResult<Uint256> {
+    let resp: BalanceResponse = querier.query(&QueryRequest::Bank(BankQuery::Balance {
+        address: addr.to_string(),
+        denom: denom.to_string(),
+    }))?;
+    Ok(resp.amount.amount)
 }

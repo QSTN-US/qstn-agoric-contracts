@@ -1,7 +1,6 @@
 use crate::error::ContractError;
 use crate::state::{
     Config, ManagerInfo, SurveyInfo, CONFIG, MANAGERS, SURVEYS, SURVEY_REWARDED_USERS,
-    USED_PROOF_TOKENS,
 };
 
 use crate::helpers;
@@ -9,6 +8,7 @@ use crate::query;
 use cosmwasm_std::{coins, Addr, BankMsg, Binary, DepsMut, Env, MessageInfo, Response, Uint256};
 use cw_utils::Expiration;
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_survey(
     ctx: (DepsMut, &Env, MessageInfo),
     signature: Binary,
@@ -22,7 +22,7 @@ pub fn create_survey(
     amount_to_gas_station: u128,
     manager_pub_key: Binary,
 ) -> Result<Response, ContractError> {
-    let (deps, env, info) = ctx;
+    let (mut deps, env, info) = ctx;
 
     if SURVEYS.has(deps.storage, &survey_id) {
         return Err(ContractError::SurveyAlreadyExists {});
@@ -45,8 +45,8 @@ pub fn create_survey(
         amount_to_gas_station,
     )?;
 
-    helpers::pre_auth_validations(
-        &deps,
+    helpers::auth_validations(
+        &mut deps,
         env,
         token.clone(),
         message_hash,
@@ -79,12 +79,6 @@ pub fn create_survey(
         return Err(ContractError::InvalidTransactionValue {});
     }
 
-    let expected_survey_amount = query::get_survey_amount_to_fund(deps.as_ref(), &survey_id)?;
-
-    if amount_to_survey != expected_survey_amount {
-        return Err(ContractError::InvalidRewardAmount {});
-    }
-
     let message = BankMsg::Send {
         to_address: config.gas_station.to_string(),
         amount: coins(amount_to_gas_station, reward_denom),
@@ -92,14 +86,12 @@ pub fn create_survey(
 
     SURVEYS.save(deps.storage, &survey_id, &survey_info)?;
 
-    // Mark proof token as used
-    USED_PROOF_TOKENS.save(deps.storage, &token, &true)?;
-
     Ok(Response::new()
         .add_message(message)
         .add_attribute("action", "create_survey"))
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn cancel_survey(
     ctx: (DepsMut, &Env, MessageInfo),
     signature: Binary,
@@ -108,14 +100,14 @@ pub fn cancel_survey(
     survey_id: String,
     manager_pub_key: Binary,
 ) -> Result<Response, ContractError> {
-    let (deps, env, _info) = ctx;
+    let (mut deps, env, _info) = ctx;
     let message_hash = query::cancel_survey_proof(&token, time_to_expire, &survey_id)?;
 
     let config = CONFIG.load(deps.storage)?;
     let reward_denom = &config.reward_denom;
 
-    helpers::pre_auth_validations(
-        &deps,
+    helpers::auth_validations(
+        &mut deps,
         env,
         token.clone(),
         message_hash,
@@ -145,19 +137,26 @@ pub fn cancel_survey(
         0
     };
 
+    let bal = helpers::query_contract_balance(&deps.querier, &env.contract.address, &reward_denom)?;
+
+    // that the contract has enough balance to refund
+    if bal < Uint256::from_uint128(return_amount.into()) {
+        return Err(ContractError::InsufficientContractBalance {});
+    }
+
     let message = BankMsg::Send {
         to_address: survey_info.survey_creator.to_string(),
         amount: coins(return_amount, reward_denom),
     };
 
-    // Mark proof token as used
-    USED_PROOF_TOKENS.save(deps.storage, &token, &true)?;
-
     Ok(Response::new()
         .add_message(message)
-        .add_attribute("action", "cancel_survey"))
+        .add_attribute("action", "cancel_survey")
+        .add_attribute("amount", return_amount.to_string())
+        .add_attribute("denom", reward_denom))
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn pay_rewards(
     ctx: (DepsMut, &Env, MessageInfo),
     signature: Binary,
@@ -167,7 +166,7 @@ pub fn pay_rewards(
     participants: Vec<String>,
     manager_pub_key: Binary,
 ) -> Result<Response, ContractError> {
-    let (deps, env, _info) = ctx;
+    let (mut deps, env, _info) = ctx;
 
     if survey_ids.len() != participants.len() {
         return Err(ContractError::ArrayLengthMismatch {});
@@ -180,8 +179,8 @@ pub fn pay_rewards(
         participants.clone(),
     )?;
 
-    helpers::pre_auth_validations(
-        &deps,
+    helpers::auth_validations(
+        &mut deps,
         env,
         token.clone(),
         message_hash,
@@ -237,9 +236,6 @@ pub fn pay_rewards(
         // mark user as rewarded
         SURVEY_REWARDED_USERS.save(deps.storage, (survey_id.as_str(), &participant), &true)?;
     }
-
-    // Mark proof token as used
-    USED_PROOF_TOKENS.save(deps.storage, &token, &true)?;
 
     Ok(Response::new()
         .add_messages(messages)

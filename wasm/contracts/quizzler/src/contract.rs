@@ -125,8 +125,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             token,
             time_to_expire,
             survey_id,
-        } => query::cancel_survey_proof(token.as_str(), time_to_expire, survey_id.as_str()),
+        } => {
+            let query_resp =
+                query::cancel_survey_proof(token.as_str(), time_to_expire, survey_id.as_str())?;
 
+            to_json_binary(&query_resp)
+        }
         QueryMsg::CreateSurveyProof {
             token,
             time_to_expire,
@@ -137,23 +141,32 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             survey_hash,
             reward_denom,
             amount_to_gas_station,
-        } => query::create_survey_proof(
-            token.as_str(),
-            time_to_expire,
-            deps.api.addr_validate(&owner)?,
-            survey_id.as_str(),
-            participants_limit,
-            reward_per_user,
-            survey_hash,
-            reward_denom,
-            amount_to_gas_station,
-        ),
+        } => {
+            let query_resp = query::create_survey_proof(
+                token.as_str(),
+                time_to_expire,
+                deps.api.addr_validate(&owner)?,
+                survey_id.as_str(),
+                participants_limit,
+                reward_per_user,
+                survey_hash,
+                reward_denom,
+                amount_to_gas_station,
+            )?;
+
+            to_json_binary(&query_resp)
+        }
         QueryMsg::PayRewardsProof {
             token,
             time_to_expire,
-            survey_id,
+            survey_ids,
             participants,
-        } => query::pay_rewards_proof(token.as_str(), time_to_expire, survey_id, participants),
+        } => {
+            let query_resp =
+                query::pay_rewards_proof(token.as_str(), time_to_expire, survey_ids, participants)?;
+
+            to_json_binary(&query_resp)
+        }
         QueryMsg::GetSurvey { survey_id } => {
             let resp = query::get_survey(deps, survey_id.as_str())?;
             to_json_binary(&resp)

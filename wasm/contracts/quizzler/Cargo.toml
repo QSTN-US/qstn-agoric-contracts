@@ -50,6 +50,13 @@ thiserror = { version = "2.0.16" }
 cw-utils = "3.0.0"
 semver = "1"
 sha2 = "0.10.9"
+hex = "0.4"
 
 [dev-dependencies]
 cw-multi-test = "3.0.0"
+osmosis-test-tube = "27.0.1"
+ed25519-dalek = { version = "2", default-features = false, features = [
+  "alloc",
+] }
+ed25519-zebra = { version = "=4.0.3", default-features = false }
+rand_core = "0.6"

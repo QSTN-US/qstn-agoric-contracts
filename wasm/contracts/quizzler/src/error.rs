@@ -4,7 +4,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum ContractError {
     #[error("{0}")]
-    Std(#[from] StdError),
+    StdError(#[from] StdError),
 
     #[error("{0}")]
     Payment(#[from] cw_utils::PaymentError),
@@ -46,7 +46,7 @@ pub enum ContractError {
     ProofExpired {},
 
     #[error("Insufficient Funds")]
-    InsufficientFunds {},
+    InsufficientContractBalance {},
 
     #[error("Survey Creation Failed")]
     SurveyCreationFailed {},

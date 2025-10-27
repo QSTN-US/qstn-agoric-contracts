@@ -7,6 +7,7 @@ use cosmwasm_std::{to_json_binary, Addr, Binary, Deps, StdResult};
 use cw_utils::Expiration;
 use sha2::{Digest, Sha256};
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_survey_proof(
     token: &str,
     time_to_expire: Expiration,
@@ -32,7 +33,9 @@ pub fn create_survey_proof(
     };
 
     let bytes = to_json_binary(&payload)?;
+
     let digest = Sha256::digest(&bytes);
+
     Ok(Binary::from(digest.to_vec()))
 }
 
@@ -50,6 +53,7 @@ pub fn cancel_survey_proof(
 
     let bytes = to_json_binary(&payload)?;
     let digest = Sha256::digest(&bytes);
+
     Ok(Binary::from(digest.to_vec()))
 }
 
@@ -69,6 +73,7 @@ pub fn pay_rewards_proof(
 
     let bytes = to_json_binary(&payload)?;
     let digest = Sha256::digest(&bytes);
+
     Ok(Binary::from(digest.to_vec()))
 }
 
@@ -81,6 +86,7 @@ pub fn get_survey(deps: Deps, survey_id: &str) -> StdResult<SurveyResponse> {
         participants_rewarded: survey_info.participants_rewarded,
         survey_hash: survey_info.survey_hash,
         amount_to_fund: survey_info.participants_limit as u128 * survey_info.reward_per_user,
+        is_cancelled: survey_info.is_cancelled,
     })
 }
 
