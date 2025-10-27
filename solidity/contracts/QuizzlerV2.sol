@@ -90,10 +90,6 @@ contract QuizzlerV2 is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrade
     error Quizzler__WrongSender();
     /// @notice Thrown when the message ID is invalid
     error Quizzler__WrongMsgId();
-    /// @notice Thrown when the nonce is outdated
-    error Quizzler__NonceTooOld();
-    /// @notice Thrown when the deadline has passed
-    error Quizzler__PastDeadline();
     /// @notice Thrown when the signer is invalid
     error Quizzler_InvalidSigner();
     /// @notice Thrown when attempting to create a survey that already exists

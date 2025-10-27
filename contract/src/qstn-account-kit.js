@@ -39,6 +39,9 @@ const AccountKitStateShape = {
   localChainId: M.string(),
   localAccount: M.remotable('LocalAccount'),
   assets: M.any(),
+  axelarRemoteChannel: M.any(),
+  osmosisRemoteChannel: M.any(),
+  dydxRemoteChannel: M.any(),
 };
 harden(AccountKitStateShape);
 
@@ -166,6 +169,7 @@ export const prepareAccountKit = (zone, { zcf, vowTools, log, zoeTools }) => {
               void log(`Initiating IBC Transfer...`);
               void log(`DENOM of token:${denom}`);
               trace('Initiating IBC Transfer...');
+
               await this.state.localAccount.transfer(
                 {
                   value: gmpAddresses.AXELAR_GMP,
