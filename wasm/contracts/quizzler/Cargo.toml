@@ -51,6 +51,7 @@ cw-utils = "3.0.0"
 semver = "1"
 sha2 = "0.10.9"
 hex = "0.4"
+bech32 = "0.9.1"
 
 [dev-dependencies]
 cw-multi-test = "3.0.0"

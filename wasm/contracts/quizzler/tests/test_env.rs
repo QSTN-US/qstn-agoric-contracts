@@ -35,17 +35,18 @@ impl TestEnv {
                 .unwrap()
         });
 
-        let managers = vec!["manager1".into_addr(), "manager2".into_addr()];
+        let managers = vec![
+            "agoric1elueec97as0uwavlxpmj75u5w7yq9dgphq47zx",
+            "agoric1rwwley550k9mmk6uq6mm6z4udrg8kyuyvfszjk",
+        ];
 
-        let gas_station = "gas_station".into_addr();
-
-        let reward_denom = "uosmo";
+        let gas_station = "agoric1jc5sfu3pjvgdt0p85mm4s95nr6kpdduvjf824x";
 
         // Generate keys for managers
         let mut manager_addrs = Vec::new();
         let mut manager_keys = Vec::new();
 
-        for mgr in &managers {
+        for mgr in managers {
             let (pub_key, signing_key) = generate_keys().unwrap();
 
             let public_key_bytes: [u8; 32] = pub_key.into();
@@ -58,7 +59,7 @@ impl TestEnv {
             });
 
             manager_keys.push(ManagerKeys {
-                addr: mgr.clone(),
+                addr: Addr::unchecked(mgr),
                 pub_key: pub_key_binary,
                 signing_key,
             });
@@ -77,7 +78,8 @@ impl TestEnv {
                 &InstantiateMsg {
                     managers: manager_addrs,
                     gas_station: gas_station.to_string(),
-                    reward_denom: reward_denom.to_string(),
+                    channel_id: "channel-0".to_string(),
+                    receiver_prefix: "agoric".to_string(),
                 },
                 &[],
                 "Quizzler",
@@ -107,7 +109,7 @@ pub struct SurveyMock {
 
 pub fn dummy_survey(survey_id: String) -> SurveyMock {
     SurveyMock {
-        survey_creator: "creator".into_addr().to_string(),
+        survey_creator: "agoric1rwwley550k9mmk6uq6mm6z4udrg8kyuyvfszjk".to_string(),
         survey_id,
         participants_limit: 100,
         reward_per_user: 10u128,

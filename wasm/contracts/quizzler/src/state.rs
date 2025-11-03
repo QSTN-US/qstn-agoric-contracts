@@ -14,7 +14,8 @@ pub struct ManagerInfo {
 pub struct Config {
     pub gas_station: Addr,
     pub owner: Addr,
-    pub reward_denom: String,
+    pub receiver_prefix: String,
+    pub channel_id: String,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
@@ -30,6 +31,7 @@ pub struct SurveyInfo {
     pub participants_rewarded: u32,
     pub survey_hash: Binary,
     pub is_cancelled: bool,
+    pub reward_denom: String,
 }
 
 pub const SURVEYS: Map<&str, SurveyInfo> = Map::new("surveys");

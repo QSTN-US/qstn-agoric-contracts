@@ -26,16 +26,20 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let cfg = helpers::map_validate(deps.api, &msg.managers)?;
+    let cfg = helpers::map_validate(&msg.receiver_prefix, &msg.managers)?;
 
     for manager in cfg.iter() {
         MANAGERS.save(deps.storage, &manager.address, manager)?;
     }
 
+    let (_, gas_station_addr) =
+        helpers::validate_account(&msg.receiver_prefix, msg.gas_station.as_str())?;
+
     let config = Config {
-        gas_station: deps.api.addr_validate(&msg.gas_station)?,
+        gas_station: gas_station_addr,
         owner: info.sender,
-        reward_denom: msg.reward_denom,
+        receiver_prefix: msg.receiver_prefix,
+        channel_id: msg.channel_id,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -64,6 +68,7 @@ pub fn execute(
             owner,
             survey_id,
             participants_limit,
+            reward_denom,
             reward_per_user,
             survey_hash,
             amount_to_gas_station,
@@ -76,6 +81,7 @@ pub fn execute(
             owner,
             survey_id,
             participants_limit,
+            reward_denom,
             reward_per_user,
             survey_hash,
             amount_to_gas_station,
@@ -142,15 +148,17 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             reward_denom,
             amount_to_gas_station,
         } => {
+            let config = CONFIG.load(deps.storage)?;
+            let _ = helpers::validate_account(&config.receiver_prefix, &owner)?;
             let query_resp = query::create_survey_proof(
                 token.as_str(),
                 time_to_expire,
-                deps.api.addr_validate(&owner)?,
+                owner.as_str(),
                 survey_id.as_str(),
                 participants_limit,
                 reward_per_user,
                 survey_hash,
-                reward_denom,
+                reward_denom.as_str(),
                 amount_to_gas_station,
             )?;
 

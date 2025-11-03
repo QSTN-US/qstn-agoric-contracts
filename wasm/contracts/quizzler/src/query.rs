@@ -3,7 +3,7 @@ use crate::state::{
     CancelSurveyPayload, Config, CreateSurveyPayload, PayRewardsPayload, CONFIG, SURVEYS,
 };
 
-use cosmwasm_std::{to_json_binary, Addr, Binary, Deps, StdResult};
+use cosmwasm_std::{to_json_binary, Binary, Deps, StdResult};
 use cw_utils::Expiration;
 use sha2::{Digest, Sha256};
 
@@ -11,23 +11,23 @@ use sha2::{Digest, Sha256};
 pub fn create_survey_proof(
     token: &str,
     time_to_expire: Expiration,
-    owner: Addr,
+    owner: &str,
     survey_id: &str,
     participants_limit: u32,
     reward_per_user: u128,
     survey_hash: Binary,
-    reward_denom: String,
+    reward_denom: &str,
     amount_to_gas_station: u128,
 ) -> StdResult<Binary> {
     let payload = CreateSurveyPayload {
         token,
         time_to_expire,
-        owner: owner.as_str(),
+        owner: &owner,
         survey_id,
         participants_limit,
         reward_per_user,
         survey_hash,
-        reward_denom: &reward_denom.as_str(),
+        reward_denom: &reward_denom,
         amount_to_gas_station,
         domain: "SURVEY_V1",
     };

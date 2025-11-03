@@ -80,6 +80,12 @@ pub enum ContractError {
 
     #[error("Signature Verification Failed")]
     SignatureVerificationFailed(String),
+
+    #[error("Invalid Account: {receiver}")]
+    InvalidAccount { receiver: String },
+
+    #[error("Expected Agoric Account: {receiver}")]
+    ExpectedAgoricAccount { receiver: String },
 }
 
 impl From<semver::Error> for ContractError {

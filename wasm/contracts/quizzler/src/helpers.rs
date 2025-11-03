@@ -2,22 +2,42 @@ use crate::error::ContractError;
 use crate::msg::Manager;
 use crate::state::{ManagerInfo, CONFIG, MANAGERS, USED_PROOF_TOKENS};
 use cosmwasm_std::{
-    Addr, Api, BalanceResponse, BankQuery, Binary, Deps, DepsMut, Env, QuerierWrapper,
-    QueryRequest, StdResult, Uint256,
+    Addr, BalanceResponse, BankQuery, Binary, Coin, Deps, DepsMut, Env, IbcMsg, IbcTimeout,
+    QuerierWrapper, QueryRequest, StdResult, Uint256,
 };
 use cw_utils::Expiration;
 
-pub fn map_validate(api: &dyn Api, managers: &[Manager]) -> StdResult<Vec<ManagerInfo>> {
+pub fn map_validate(receiver_prefix: &str, managers: &[Manager]) -> StdResult<Vec<ManagerInfo>> {
     managers
         .iter()
         .map(|admin| {
+            let (_, validated_addr) = validate_account(receiver_prefix, &admin.addr)?;
             Ok(ManagerInfo {
-                address: api.addr_validate(&admin.addr)?,
+                address: validated_addr,
                 pub_key: admin.pub_key.clone(),
                 status: true,
             })
         })
         .collect()
+}
+
+pub fn validate_account(
+    receiver_prefix: &str,
+    receiver: &str,
+) -> StdResult<(String, Addr), ContractError> {
+    let Ok((prefix, _, _)) = bech32::decode(receiver) else {
+        return Err(ContractError::InvalidAccount {
+            receiver: receiver.to_string(),
+        });
+    };
+
+    if prefix != receiver_prefix {
+        return Err(ContractError::ExpectedAgoricAccount {
+            receiver: receiver.to_string(),
+        });
+    }
+
+    Ok((prefix, Addr::unchecked(receiver)))
 }
 
 pub fn auth_validations(
@@ -90,4 +110,31 @@ pub fn query_contract_balance(
         denom: denom.to_string(),
     }))?;
     Ok(resp.amount.amount)
+}
+
+pub fn create_ibc_transfer(
+    deps: Deps,
+    env: &Env,
+    receiver: &str,
+    coin: Coin,
+) -> StdResult<IbcMsg, ContractError> {
+    let config = CONFIG.load(deps.storage).unwrap();
+
+    let _ = validate_account(&config.receiver_prefix, receiver)?;
+
+    let ibc_transfer_msg = IbcMsg::Transfer {
+        channel_id: config.channel_id,
+        to_address: receiver.to_string(),
+        amount: coin,
+        timeout: IbcTimeout::with_timestamp(
+            env.block.time.plus_seconds(600), // 10 minutes
+        ),
+        memo: Option::None,
+    };
+
+    Ok(ibc_transfer_msg)
+}
+
+pub fn ibc_message_event(context: &str) -> cosmwasm_std::Event {
+    cosmwasm_std::Event::new("ibc_message_added").add_attribute("context", context)
 }

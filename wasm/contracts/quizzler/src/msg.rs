@@ -13,7 +13,8 @@ pub struct Manager {
 pub struct InstantiateMsg {
     pub managers: Vec<Manager>,
     pub gas_station: String,
-    pub reward_denom: String,
+    pub receiver_prefix: String,
+    pub channel_id: String,
 }
 
 /// Message type for `execute` entry_point
@@ -34,6 +35,7 @@ pub enum ExecuteMsg {
         owner: String,
         survey_id: String,
         participants_limit: u32,
+        reward_denom: String,
         reward_per_user: u128,
         survey_hash: Binary,
         amount_to_gas_station: u128,

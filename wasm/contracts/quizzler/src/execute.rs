@@ -5,7 +5,7 @@ use crate::state::{
 
 use crate::helpers;
 use crate::query;
-use cosmwasm_std::{coins, Addr, BankMsg, Binary, DepsMut, Env, MessageInfo, Response, Uint256};
+use cosmwasm_std::{Addr, Binary, Coin, DepsMut, Env, IbcMsg, MessageInfo, Response, Uint256};
 use cw_utils::Expiration;
 
 #[allow(clippy::too_many_arguments)]
@@ -17,6 +17,7 @@ pub fn create_survey(
     owner: String,
     survey_id: String,
     participants_limit: u32,
+    reward_denom: String,
     reward_per_user: u128,
     survey_hash: Binary,
     amount_to_gas_station: u128,
@@ -28,20 +29,17 @@ pub fn create_survey(
         return Err(ContractError::SurveyAlreadyExists {});
     }
 
-    let owner_addr = deps.api.addr_validate(&owner)?;
-
     let config = CONFIG.load(deps.storage)?;
-    let reward_denom = &config.reward_denom;
 
     let message_hash = query::create_survey_proof(
         &token,
         time_to_expire,
-        owner_addr.clone(),
+        &owner,
         &survey_id,
         participants_limit,
         reward_per_user,
         survey_hash.clone(),
-        reward_denom.clone(),
+        &reward_denom,
         amount_to_gas_station,
     )?;
 
@@ -55,17 +53,20 @@ pub fn create_survey(
         signature,
     )?;
 
+    let (_, validated_owner_addr) = helpers::validate_account(&config.receiver_prefix, &owner)?;
+
     // Save survey info
     let survey_info = SurveyInfo {
-        survey_creator: owner_addr,
+        survey_creator: validated_owner_addr,
         participants_limit,
+        reward_denom: reward_denom.clone(),
         reward_per_user,
         participants_rewarded: 0,
         survey_hash,
         is_cancelled: false,
     };
 
-    let amount_sent = cw_utils::must_pay(&info, reward_denom)?;
+    let amount_sent = cw_utils::must_pay(&info, &reward_denom)?;
 
     let amount_to_survey = (participants_limit as u128)
         .checked_mul(reward_per_user)
@@ -79,16 +80,19 @@ pub fn create_survey(
         return Err(ContractError::InvalidTransactionValue {});
     }
 
-    let message = BankMsg::Send {
-        to_address: config.gas_station.to_string(),
-        amount: coins(amount_to_gas_station, reward_denom),
-    };
+    let coin = Coin::new(amount_to_gas_station, reward_denom);
+
+    let ibc_msg =
+        helpers::create_ibc_transfer(deps.as_ref(), env, &config.gas_station.to_string(), coin)?;
 
     SURVEYS.save(deps.storage, &survey_id, &survey_info)?;
 
     Ok(Response::new()
-        .add_message(message)
-        .add_attribute("action", "create_survey"))
+        .add_attribute("action", "create_survey")
+        .add_event(helpers::ibc_message_event(
+            "create_survey: fund gas station",
+        ))
+        .add_message(ibc_msg))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -102,9 +106,6 @@ pub fn cancel_survey(
 ) -> Result<Response, ContractError> {
     let (mut deps, env, _info) = ctx;
     let message_hash = query::cancel_survey_proof(&token, time_to_expire, &survey_id)?;
-
-    let config = CONFIG.load(deps.storage)?;
-    let reward_denom = &config.reward_denom;
 
     helpers::auth_validations(
         &mut deps,
@@ -127,6 +128,8 @@ pub fn cancel_survey(
         },
     )?;
 
+    let reward_denom = survey_info.reward_denom;
+
     let funded_amount = query::get_survey_amount_to_fund(deps.as_ref(), &survey_id)?;
 
     let paid_amount = query::get_survey_rewards_amount_paid(deps.as_ref(), &survey_id)?;
@@ -144,16 +147,23 @@ pub fn cancel_survey(
         return Err(ContractError::InsufficientContractBalance {});
     }
 
-    let message = BankMsg::Send {
-        to_address: survey_info.survey_creator.to_string(),
-        amount: coins(return_amount, reward_denom),
-    };
+    let coin = Coin::new(return_amount, &reward_denom);
+
+    let ibc_msg = helpers::create_ibc_transfer(
+        deps.as_ref(),
+        env,
+        &survey_info.survey_creator.to_string(),
+        coin,
+    )?;
 
     Ok(Response::new()
-        .add_message(message)
         .add_attribute("action", "cancel_survey")
         .add_attribute("amount", return_amount.to_string())
-        .add_attribute("denom", reward_denom))
+        .add_attribute("denom", reward_denom)
+        .add_event(helpers::ibc_message_event(
+            "create_survey: fund gas station",
+        ))
+        .add_message(ibc_msg))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -189,8 +199,7 @@ pub fn pay_rewards(
         signature,
     )?;
 
-    let mut messages: Vec<BankMsg> = Vec::new();
-    let config = CONFIG.load(deps.storage)?;
+    let mut messages: Vec<IbcMsg> = Vec::new();
 
     for i in 0..survey_ids.len() {
         let survey_id = &survey_ids[i];
@@ -204,42 +213,43 @@ pub fn pay_rewards(
             return Err(ContractError::UserAlreadyRewarded {});
         }
 
-        SURVEYS.update(
-            deps.storage,
-            survey_id,
-            |survey_info| -> Result<SurveyInfo, ContractError> {
-                let mut survey_info = survey_info.ok_or(ContractError::SurveyNotFound {})?;
+        let mut survey_info = SURVEYS.load(deps.storage, survey_id)?;
+        let reward_denom = survey_info.reward_denom.clone();
+        let reward_per_user = survey_info.reward_per_user;
 
-                // check if survey is cancelled
-                if survey_info.is_cancelled {
-                    return Err(ContractError::SurveyAlreadyCancelled {});
-                }
+        // check if survey is cancelled
+        if survey_info.is_cancelled {
+            return Err(ContractError::SurveyAlreadyCancelled {});
+        }
 
-                // check if all participants has been rewarded
-                if survey_info.participants_rewarded >= survey_info.participants_limit {
-                    return Err(ContractError::AllParticipantsRewarded {});
-                }
+        // check if all participants has been rewarded
+        if survey_info.participants_rewarded >= survey_info.participants_limit {
+            return Err(ContractError::AllParticipantsRewarded {});
+        }
 
-                // check if user already rewarded
-
-                messages.push(BankMsg::Send {
-                    to_address: participant.to_string(),
-                    amount: coins(survey_info.reward_per_user, &config.reward_denom),
-                });
-
-                survey_info.participants_rewarded += 1;
-
-                Ok(survey_info)
-            },
+        // Create IBC transfer message
+        let ibc_transfer_message = helpers::create_ibc_transfer(
+            deps.as_ref(),
+            env,
+            &participant.to_string(),
+            Coin::new(reward_per_user, &reward_denom),
         )?;
+
+        messages.push(ibc_transfer_message);
+
+        survey_info.participants_rewarded += 1;
+        SURVEYS.save(deps.storage, survey_id, &survey_info)?;
 
         // mark user as rewarded
         SURVEY_REWARDED_USERS.save(deps.storage, (survey_id.as_str(), &participant), &true)?;
     }
 
     Ok(Response::new()
+        .add_attribute("action", "pay_rewards")
         .add_messages(messages)
-        .add_attribute("action", "pay_rewards"))
+        .add_event(helpers::ibc_message_event(
+            "pay_rewards: distribute survey rewards",
+        )))
 }
 
 pub fn set_manager(
