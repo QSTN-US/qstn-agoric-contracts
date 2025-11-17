@@ -1,6 +1,8 @@
+use crate::helpers;
 use crate::msg::SurveyResponse;
 use crate::state::{
     CancelSurveyPayload, Config, CreateSurveyPayload, PayRewardsPayload, CONFIG, SURVEYS,
+    SURVEY_REWARDED_USERS,
 };
 
 use cosmwasm_std::{to_json_binary, Binary, Deps, StdResult};
@@ -100,4 +102,17 @@ pub fn get_survey_rewards_amount_paid(deps: Deps, survey_id: &str) -> StdResult<
 
 pub fn get_config(deps: Deps) -> StdResult<Config> {
     CONFIG.load(deps.storage)
+}
+
+pub fn get_has_claimed_reward(deps: Deps, survey_id: &str, participant: &str) -> StdResult<bool> {
+    let config = CONFIG.load(deps.storage)?;
+
+    let (_, participant) = helpers::validate_account(&config.receiver_prefix, &participant)
+        .map_err(|err| cosmwasm_std::StdError::generic_err(err.to_string()))?;
+
+    let already_rewarded = SURVEY_REWARDED_USERS
+        .load(deps.storage, (survey_id, &participant))
+        .unwrap_or(false);
+
+    Ok(already_rewarded)
 }

@@ -195,9 +195,76 @@ export const sendTransaction = async (
       }
     } else if (chainType === 'cosmos') {
       // Handle Cosmos chain transfer
-      const memo = JSON.stringify(payload);
+
+      // Validate payload structure
+      let parsedPayload;
+      try {
+        parsedPayload = JSON.parse(payload);
+      } catch (e) {
+        throw makeError(`Invalid payload: must be valid JSON string. ${q(e)}`);
+      }
+
+      // Validate required fields in payload
+      parsedPayload.wasm != null || Fail`Payload must contain 'wasm' field`;
+      parsedPayload.wasm.contract != null ||
+        Fail`Payload wasm must contain 'contract' field`;
+      parsedPayload.wasm.msg != null ||
+        Fail`Payload wasm must contain 'msg' field`;
+
+      // Validate message type and all required fields
+      const msg = parsedPayload.wasm.msg;
+
+      let msgData;
+      /** @type {string[]} */
+      let requiredFields = [];
+
+      if (msg.create_survey) {
+        msgData = msg.create_survey;
+        requiredFields = [
+          'signature',
+          'token',
+          'time_to_expire',
+          'owner',
+          'survey_id',
+          'participants_limit',
+          'reward_denom',
+          'reward_amount',
+          'survey_hash',
+          'manager_pub_key',
+        ];
+      } else if (msg.cancel_survey) {
+        msgData = msg.cancel_survey;
+        requiredFields = [
+          'signature',
+          'token',
+          'time_to_expire',
+          'survey_id',
+          'manager_pub_key',
+        ];
+      } else if (msg.pay_rewards) {
+        msgData = msg.pay_rewards;
+        requiredFields = [
+          'signature',
+          'token',
+          'time_to_expire',
+          'survey_ids',
+          'participants',
+          'manager_pub_key',
+        ];
+      } else {
+        Fail`Payload wasm.msg must contain one of: create_survey, cancel_survey, or pay_rewards`;
+      }
+
+      // Validate all required fields for the message type
+      for (const field of requiredFields) {
+        msgData[field] != null ||
+          Fail`Message must contain '${q(field)}' field`;
+      }
+
+      const memo = payload;
 
       void log(`Initiating IBC Transfer...`);
+
       void log(`DENOM of token:${denom}`);
 
       // Execute Cosmos transfer

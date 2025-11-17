@@ -199,6 +199,14 @@ contract QuizzlerGMP is Initializable, ReentrancyGuardUpgradeable, OwnableUpgrad
         amountToFund = getSurveyAmountToFund(_surveyId);
     }
 
+    /// @notice Checks if a participant has already claimed their reward for a specific survey
+    /// @param _surveyId The unique identifier of the survey
+    /// @param _participant The participant's Agoric address
+    /// @return bool True if the participant has claimed their reward, false otherwise
+    function getHasClaimedReward(string memory _surveyId, string memory _participant) external view returns (bool) {
+        return surveysUsersRewarded[_surveyId][_participant];
+    }
+
     /// @notice Generates a proof for survey creating
     /// @param _token Unique token for the transaction
     /// @param _timeToExpire Timestamp until which the proof is valid

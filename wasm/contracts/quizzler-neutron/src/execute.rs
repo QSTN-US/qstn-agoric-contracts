@@ -1,12 +1,14 @@
 use crate::error::ContractError;
 use crate::helpers;
 use crate::ibc_lifecycle::msg_with_sudo_callback;
-use crate::msg::{SudoPayload, Type1};
+use crate::msg::{
+    CancelSurveyResponse, CreateSurveyResponse, PayRewardsResponse, SudoPayload, Type1,
+};
 use crate::query;
 use crate::state::{
     Config, ManagerInfo, SurveyInfo, CONFIG, MANAGERS, SURVEYS, SURVEY_REWARDED_USERS,
 };
-use cosmwasm_std::{Binary, DepsMut, Env, MessageInfo, Response, SubMsg, Uint128};
+use cosmwasm_std::{to_json_binary, Binary, DepsMut, Env, MessageInfo, Response, SubMsg, Uint128};
 
 #[allow(clippy::too_many_arguments)]
 pub fn create_survey(
@@ -76,11 +78,22 @@ pub fn create_survey(
 
     SURVEYS.save(deps.storage, &survey_id, &survey_info)?;
 
+    let response_data = CreateSurveyResponse::new(
+        &survey_id,
+        participants_limit,
+        reward_amount,
+        &reward_denom,
+        env.block.time.seconds(),
+    );
+
     Ok(Response::new()
+        .set_data(to_json_binary(&response_data)?)
         .add_attribute("action", "create_survey")
-        .add_event(helpers::ibc_message_event(
-            "create_survey: fund gas station",
-        )))
+        .add_attribute("survey_id", survey_id)
+        .add_attribute("owner", owner)
+        .add_attribute("reward_denom", reward_denom)
+        .add_attribute("reward_amount", reward_amount.to_string())
+        .add_attribute("participants_limit", participants_limit.to_string()))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -155,7 +168,11 @@ pub fn cancel_survey(
         }),
     )?;
 
+    let response_data =
+        CancelSurveyResponse::new(&survey_id, return_amount, env.block.time.seconds());
+
     Ok(Response::new()
+        .set_data(to_json_binary(&response_data)?)
         .add_submessage(submsg)
         .add_attribute("action", "cancel_survey")
         .add_attribute("amount", return_amount.to_string())
@@ -181,6 +198,8 @@ pub fn pay_rewards(
         return Err(ContractError::ArrayLengthMismatch {});
     }
 
+    let config = CONFIG.load(deps.storage)?;
+
     let message_hash = query::pay_rewards_proof(
         &token,
         time_to_expire,
@@ -199,10 +218,13 @@ pub fn pay_rewards(
     )?;
 
     let mut messages: Vec<SubMsg> = Vec::new();
+    let mut rewards = 0u128;
 
     for i in 0..survey_ids.len() {
         let survey_id = &survey_ids[i];
-        let participant = deps.api.addr_validate(&participants[i])?;
+
+        let (_, participant) =
+            helpers::validate_account(&config.receiver_prefix, &participants[i])?;
 
         let already_rewarded = SURVEY_REWARDED_USERS
             .load(deps.storage, (survey_id.as_str(), &participant))
@@ -248,11 +270,17 @@ pub fn pay_rewards(
         survey_info.participants_rewarded += 1;
         SURVEYS.save(deps.storage, survey_id, &survey_info)?;
 
+        rewards += reward_amount;
+
         // mark user as rewarded
         SURVEY_REWARDED_USERS.save(deps.storage, (survey_id.as_str(), &participant), &true)?;
     }
 
+    let response_data =
+        PayRewardsResponse::new(survey_ids, rewards, participants, env.block.time.seconds());
+
     Ok(Response::new()
+        .set_data(to_json_binary(&response_data)?)
         .add_submessages(messages)
         .add_attribute("action", "pay_rewards")
         .add_event(helpers::ibc_message_event(
@@ -271,9 +299,11 @@ pub fn set_manager(
 
     let pub_key = Binary::from_base64(&pub_key)?;
 
+    let config = CONFIG.load(deps.storage)?;
+
     helpers::check_is_contract_owner(deps.as_ref(), sender)?;
 
-    let manager_addr = deps.api.addr_validate(manager_addr)?;
+    let (_, manager_addr) = helpers::validate_account(&config.receiver_prefix, &manager_addr)?;
 
     if MANAGERS.has(deps.storage, &manager_addr) {
         MANAGERS.update(

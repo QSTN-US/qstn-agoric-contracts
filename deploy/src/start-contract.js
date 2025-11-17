@@ -20,12 +20,12 @@ const trace = makeTracer('start qstn contract', true);
  * @param {BootstrapPowers & {
  *   installation: {
  *     consume: {
- *       qstnRouter: Installation<StartFn>;
+ *       qstnRouterV1: Installation<StartFn>;
  *     };
  *   };
  *   instance: {
  *     produce: {
- *       qstnRouter: Producer<Instance<StartFn>>
+ *       qstnRouterV1: Producer<Instance<StartFn>>
  *     };
  *   };
  *   issuer: {
@@ -54,10 +54,10 @@ export const startQstnRouter = async (
       startUpgradable,
     },
     installation: {
-      consume: { qstnRouter },
+      consume: { qstnRouterV1 },
     },
     instance: {
-      produce: { qstnRouter: produceInstance },
+      produce: { qstnRouterV1: produceInstance },
     },
     issuer: {
       consume: { BLD, IST },
@@ -78,7 +78,7 @@ export const startQstnRouter = async (
       marshaller,
       orchestrationService: cosmosInterchainService,
       storageNode: E(NonNullish(await chainStorage)).makeChildNode(
-        'qstnRouter',
+        'qstnRouterV1',
       ),
       timerService: chainTimerService,
       chainInfo,
@@ -117,8 +117,8 @@ export const startQstnRouter = async (
 
   trace('Starting contract instance');
   const { instance } = await E(startUpgradable)({
-    label: 'qstnRouter',
-    installation: qstnRouter,
+    label: 'qstnRouterV1',
+    installation: qstnRouterV1,
     issuerKeywordRecord,
     privateArgs,
   });
@@ -141,10 +141,10 @@ export const getManifest = ({ restoreRef }, { installationRef, options }) => {
           startUpgradable: true,
         },
         installation: {
-          consume: { qstnRouter: true },
+          consume: { qstnRouterV1: true },
         },
         instance: {
-          produce: { qstnRouter: true },
+          produce: { qstnRouterV1: true },
         },
         issuer: {
           consume: { BLD: true, IST: true, AXL: true, ATOM: true },
@@ -152,7 +152,7 @@ export const getManifest = ({ restoreRef }, { installationRef, options }) => {
       },
     },
     installations: {
-      qstnRouter: restoreRef(installationRef),
+      qstnRouterV1: restoreRef(installationRef),
     },
     options,
   };

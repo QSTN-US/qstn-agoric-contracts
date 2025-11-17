@@ -15,7 +15,7 @@ import { makeTracer } from '@agoric/internal';
  * @import {ZCF} from '@agoric/zoe';
  */
 
-const trace = makeTracer('qstnRouter');
+const trace = makeTracer('qstnRouterV1');
 
 /**
  * Orchestration contract to be wrapped by withOrchestration for Zoe

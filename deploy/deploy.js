@@ -146,7 +146,7 @@ const acceptProposal = async () => {
 
   // const baseDir = CI ? '/usr/src/upgrade-test-scripts' : '/usr/src';
   const baseDir = '.';
-  const submitCommand = `cd ${baseDir} && agd tx gov submit-proposal swingset-core-eval ${permit} ${script} --title='Install ${script}' --description='Deploy QSTN ${script}' --deposit=1000000ubld --from ${walletName} ${SIGN_BROADCAST_OPTS} -o json`;
+  const submitCommand = `cd ${baseDir} && agd tx gov submit-proposal swingset-core-eval ${permit} ${script} --title='Install QSTN Router' --description='Deploy QSTN ${script}' --deposit=1000000ubld --from ${walletName} ${SIGN_BROADCAST_OPTS} -o json`;
   await execCmd(submitCommand);
 
   await new Promise((resolve) => setTimeout(resolve, 5000));

@@ -186,6 +186,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             let config: Config = CONFIG.load(deps.storage)?;
             to_json_binary(&config)
         }
+        QueryMsg::GetHasClaimedReward {
+            survey_id,
+            participant,
+        } => {
+            let has_claimed =
+                query::get_has_claimed_reward(deps, survey_id.as_str(), participant.as_str())?;
+            to_json_binary(&has_claimed)
+        }
     }
 }
 

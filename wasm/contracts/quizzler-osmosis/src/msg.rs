@@ -106,6 +106,11 @@ pub enum QueryMsg {
     GetSurveyRewardsAmountPaid { survey_id: String },
     #[returns(crate::state::Config)]
     GetConfig {},
+    #[returns(bool)]
+    GetHasClaimedReward {
+        survey_id: String,
+        participant: String,
+    },
 }
 
 #[cw_serde]
@@ -135,4 +140,72 @@ pub enum IBCLifecycleComplete {
 pub enum SudoMsg {
     #[serde(rename = "ibc_lifecycle_complete")]
     IBCLifecycleComplete(IBCLifecycleComplete),
+}
+
+#[cw_serde]
+pub struct CreateSurveyResponse {
+    pub survey_id: String,
+    pub participants_limit: u32,
+    pub reward_amount: u128,
+    pub reward_denom: String,
+    pub timestamp: u64,
+}
+
+impl CreateSurveyResponse {
+    pub fn new(
+        survey_id: &str,
+        participants_limit: u32,
+        reward_amount: u128,
+        reward_denom: &str,
+        timestamp: u64,
+    ) -> Self {
+        Self {
+            survey_id: survey_id.to_string(),
+            participants_limit,
+            reward_amount,
+            reward_denom: reward_denom.to_string(),
+            timestamp,
+        }
+    }
+}
+
+#[cw_serde]
+pub struct CancelSurveyResponse {
+    pub survey_id: String,
+    pub amount_refunded: u128,
+    pub timestamp: u64,
+}
+
+impl CancelSurveyResponse {
+    pub fn new(survey_id: &str, amount: u128, timestamp: u64) -> Self {
+        Self {
+            survey_id: survey_id.to_string(),
+            amount_refunded: amount,
+            timestamp,
+        }
+    }
+}
+
+#[cw_serde]
+pub struct PayRewardsResponse {
+    pub survey_ids: Vec<String>,
+    pub participants: Vec<String>,
+    pub total_rewards_paid: u128,
+    pub timestamp: u64,
+}
+
+impl PayRewardsResponse {
+    pub fn new(
+        survey_ids: Vec<String>,
+        rewards: u128,
+        participants: Vec<String>,
+        timestamp: u64,
+    ) -> Self {
+        Self {
+            survey_ids,
+            total_rewards_paid: rewards,
+            participants,
+            timestamp,
+        }
+    }
 }
