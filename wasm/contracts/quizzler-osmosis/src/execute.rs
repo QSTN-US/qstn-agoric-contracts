@@ -29,6 +29,16 @@ pub fn create_survey(
         return Err(ContractError::SurveyAlreadyExists {});
     }
 
+    if reward_amount == 0 {
+        return Err(ContractError::InvalidRewardAmount {});
+    }
+
+    if participants_limit == 0 {
+        return Err(ContractError::CustomError {
+            val: "Participants limit must be greater than 0".to_string(),
+        });
+    }
+
     let config = CONFIG.load(deps.storage)?;
 
     let message_hash = query::create_survey_proof(
@@ -71,8 +81,15 @@ pub fn create_survey(
         .checked_mul(reward_amount)
         .ok_or(ContractError::ArithmeticError {})?;
 
-    if amount_sent < Uint256::from_uint128(amount_to_survey.into()) {
-        return Err(ContractError::InvalidRewardAmount {});
+    // Ensure exact funding - prevent both underfunding and overfunding
+    let amount_to_survey_uint256 = Uint256::from_uint128(amount_to_survey.into());
+    if amount_sent < amount_to_survey_uint256 {
+        return Err(ContractError::CustomError {
+            val: format!(
+                "Exact funding required: expected {} {}, got {}",
+                amount_to_survey, reward_denom, amount_sent
+            ),
+        });
     }
 
     SURVEYS.save(deps.storage, &survey_id, &survey_info)?;
@@ -122,6 +139,9 @@ pub fn cancel_survey(
         &survey_id,
         |survey_info| -> Result<SurveyInfo, ContractError> {
             let mut survey = survey_info.ok_or(ContractError::SurveyNotFound {})?;
+            if survey.is_cancelled {
+                return Err(ContractError::SurveyAlreadyCancelled {});
+            }
             survey.is_cancelled = true;
             Ok(survey)
         },
@@ -133,11 +153,17 @@ pub fn cancel_survey(
 
     let paid_amount = query::get_survey_rewards_amount_paid(deps.as_ref(), &survey_id)?;
 
-    let return_amount = if funded_amount >= paid_amount {
-        funded_amount - paid_amount
-    } else {
-        0
-    };
+    // This should never happen - indicates critical accounting error
+    if paid_amount > funded_amount {
+        return Err(ContractError::CustomError {
+            val: format!(
+                "Critical accounting error: paid amount ({}) exceeds funded amount ({})",
+                paid_amount, funded_amount
+            ),
+        });
+    }
+
+    let return_amount = funded_amount - paid_amount;
 
     let bal = helpers::query_contract_balance(&deps.querier, &env.contract.address, &reward_denom)?;
 
@@ -167,9 +193,7 @@ pub fn cancel_survey(
         .add_attribute("action", "cancel_survey")
         .add_attribute("amount", return_amount.to_string())
         .add_attribute("denom", reward_denom)
-        .add_event(helpers::ibc_message_event(
-            "create_survey: fund gas station",
-        )))
+        .add_event(helpers::ibc_message_event("cancel_survey: refund creator")))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -186,6 +210,12 @@ pub fn pay_rewards(
 
     if survey_ids.len() != participants.len() {
         return Err(ContractError::ArrayLengthMismatch {});
+    }
+
+    if survey_ids.is_empty() {
+        return Err(ContractError::CustomError {
+            val: "Empty arrays not allowed".to_string(),
+        });
     }
 
     let config = CONFIG.load(deps.storage)?;
@@ -207,6 +237,50 @@ pub fn pay_rewards(
         signature,
     )?;
 
+    // Calculate total rewards needed and verify contract balance
+    let mut total_rewards_needed = 0u128;
+    let mut reward_denom: Option<String> = None;
+
+    for survey_id in &survey_ids {
+        let survey_info = SURVEYS.load(deps.storage, survey_id)?;
+
+        if survey_info.is_cancelled {
+            return Err(ContractError::SurveyAlreadyCancelled {});
+        }
+
+        if survey_info.participants_rewarded >= survey_info.participants_limit {
+            return Err(ContractError::AllParticipantsRewarded {});
+        }
+
+        total_rewards_needed = total_rewards_needed
+            .checked_add(survey_info.reward_amount)
+            .ok_or(ContractError::ArithmeticError {})?;
+
+        // Ensure all surveys use the same reward_denom
+        match &reward_denom {
+            None => reward_denom = Some(survey_info.reward_denom.clone()),
+            Some(denom) => {
+                if denom != &survey_info.reward_denom {
+                    return Err(ContractError::CustomError {
+                        val: "All surveys in batch must use same reward denomination".to_string(),
+                    });
+                }
+            }
+        }
+    }
+
+    let reward_denom = reward_denom.ok_or(ContractError::CustomError {
+        val: "No reward denomination found".to_string(),
+    })?;
+
+    // Check contract has sufficient balance for all rewards
+    let contract_balance =
+        helpers::query_contract_balance(&deps.querier, &env.contract.address, &reward_denom)?;
+
+    if contract_balance < Uint256::from_uint128(total_rewards_needed.into()) {
+        return Err(ContractError::InsufficientContractBalance {});
+    }
+
     let mut messages: Vec<CosmosMsg> = Vec::new();
     let mut rewards = 0u128;
 
@@ -225,30 +299,53 @@ pub fn pay_rewards(
         }
 
         let mut survey_info = SURVEYS.load(deps.storage, survey_id)?;
-        let reward_denom = survey_info.reward_denom.clone();
+        let survey_reward_denom = survey_info.reward_denom.clone();
         let reward_amount = survey_info.reward_amount;
 
-        // check if survey is cancelled
+        // Double-check survey state before creating transfer
         if survey_info.is_cancelled {
             return Err(ContractError::SurveyAlreadyCancelled {});
         }
 
-        // check if all participants has been rewarded
         if survey_info.participants_rewarded >= survey_info.participants_limit {
             return Err(ContractError::AllParticipantsRewarded {});
         }
 
-        // Create IBC transfer message
+        // Validate the reward amount hasn't been corrupted
+        if reward_amount == 0 {
+            return Err(ContractError::CustomError {
+                val: format!("Invalid reward amount (0) for survey {}", survey_id),
+            });
+        }
+
+        // Ensure we're transferring exactly what was promised, no more
+        let actual_transfer_amount = reward_amount;
+
+        // Create IBC transfer message with explicit amount validation
+        let transfer_coin = Coin::new(actual_transfer_amount, &survey_reward_denom);
+
+        // Final sanity check: ensure coin amount matches expected reward
+        // In cosmwasm-std 3.0, Coin.amount is Uint256
+        let expected_amount: Uint256 = Uint256::from_uint128(actual_transfer_amount.into());
+        if transfer_coin.amount != expected_amount {
+            return Err(ContractError::CustomError {
+                val: format!(
+                    "Transfer amount mismatch: expected {}, got {}",
+                    reward_amount, transfer_coin.amount
+                ),
+            });
+        }
+
         let ibc_transfer_message = CosmosMsg::Ibc(helpers::create_ibc_transfer(
             deps.as_ref(),
             env,
             &participant.to_string(),
-            Coin::new(reward_amount, &reward_denom),
+            transfer_coin,
         )?);
 
         messages.push(ibc_transfer_message);
 
-        rewards += reward_amount;
+        rewards += actual_transfer_amount;
 
         survey_info.participants_rewarded += 1;
 

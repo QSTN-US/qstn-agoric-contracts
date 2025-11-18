@@ -85,12 +85,12 @@ pub fn auth_validations(
 
     let result = deps.api.ed25519_verify(&message, &signature, &pub_key)?;
 
-    // mark proof token as used
-    USED_PROOF_TOKENS.save(deps.storage, &token, &true)?;
-
     if !result {
         return Err(ContractError::InvalidMessageHash {});
     }
+
+    // mark proof token as used only after successful verification
+    USED_PROOF_TOKENS.save(deps.storage, &token, &true)?;
 
     Ok(())
 }

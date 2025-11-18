@@ -10,24 +10,17 @@
     "lint:types": "yarn workspace deploy lint:types && yarn workspace contract lint:types && yarn workspace solidity lint:types",
     "build:solidity": "cd solidity && yarn build",
     "build:deploy": "cd deploy && yarn build",
-    "build:ui": "cd ui && yarn build",
-    "build:local-env": "cd local-env && yarn build",
     "build": "yarn build:solidity && yarn build:local-env",
-    "local-env:start": "cd local-env && yarn start",
-    "local-env:relay": "cd local-env && yarn relay",
-    "deploy:token": "cd deploy && yarn register:token",
     "deploy:qstnRouter": "cd deploy && yarn deploy",
-    "deploy:contracts": "yarn deploy:token && yarn deploy:qstnRouter",
+    "deploy:contracts": "yarn deploy:qstnRouter",
     "postinstall": "patch-package"
   },
   "private": true,
   "useWorkspaces": true,
   "workspaces": [
     "contract",
-    "ui",
     "deploy",
-    "solidity",
-    "integration"
+    "solidity"
   ],
   "prettier": {
     "semi": true,

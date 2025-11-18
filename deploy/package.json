@@ -12,14 +12,12 @@
   },
   "scripts": {
     "esbuild:contract": "esbuild ../contract/src/qstn.router.js --platform=node --format=esm --bundle --outfile=dist/qstn.router.bundle.js",
-    "bundles:local-env": "agoric run src/init-contract.js --net=devnet --peer=axelar:connection-7:channel-6:uaxl --peer=osmosis:connection-6:channel-5:uosmo --peer=neutron:connection-9:channel-7:untrn",
-    "build:contract": "yarn esbuild:contract && yarn bundles:local-env",
-    "build:token": "agoric run ./asset-builder/register-interchain-bank-assets.builder.js --assets='[{\"denom\":\"ibc/2CC0B1B7A981ACC74854717F221008484603BB8360E81B262411B0D830EDE9B0\",\"issuerName\":\"AXL\",\"decimalPlaces\":6}, {\"denom\":\"ibc/6469BDA6F62C4F4B8F76629FA1E72A02A3D1DD9E2B22DDB3C3B2296DEAD29AB8\",\"issuerName\":\"OSMO\",\"decimalPlaces\":6}, {\"denom\":\"ibc/126DA09104B71B164883842B769C0E9EC1486C0887D27A9999E395C2C8FB5682\",\"issuerName\":\"NTRN\",\"decimalPlaces\":6}]' --output=./dist/interchain-bank-assets.json",
-    "build": "yarn build:contract && yarn build:token",
+    "bundles:local": "agoric run src/init-contract.js --net=devnet --peer=axelar:connection-7:channel-6:uaxl --peer=osmosis:connection-6:channel-5:uosmo --peer=neutron:connection-9:channel-7:untrn",
+    "build:contract": "yarn esbuild:contract && yarn bundles:local",
+    "build": "yarn build:contract",
     "test": "yarn esbuild:contract && ava",
     "lint:types": "tsc",
-    "deploy": "yarn build:contract && runInsideContainer=false planFile=startQstnRouter-plan.json node deploy.js",
-    "register:token": "runInsideContainer=false planFile=eval-register-interchain-bank-assets-plan.json node deploy.js"
+    "deploy": "yarn build:contract && runInsideContainer=false planFile=startQstnRouter-plan.json node deploy.js"
   },
   "ava": {
     "extensions": {

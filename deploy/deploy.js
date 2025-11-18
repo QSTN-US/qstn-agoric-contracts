@@ -6,19 +6,21 @@ const planFile = process.env.planFile;
 if (!planFile) throw new Error('PLAN_FILE environment variable is required.');
 
 const CI = process.env.CI === 'true';
-const createVault = process.env.createVault === 'true';
 const runInsideContainer = process.env.runInsideContainer === 'true';
 
 const CHAINID = 'agoricdev-25';
 const GAS_ADJUSTMENT = '1.2';
 const SIGN_BROADCAST_OPTS = `--chain-id=${CHAINID} --gas=auto --gas-adjustment=${GAS_ADJUSTMENT} --yes -b block --node https://devnet.rpc.agoric.net`;
-const walletName = 'qstn';
-// const agops = '~/tools/agoric-sdk/packages/agoric-cli/bin/agops';
+const WALLET_NAME = 'qstn';
 
 let script = '';
 let permit = '';
 let bundleFiles = [];
 
+/**
+ * Execute a command either directly or inside a Docker container
+ * @param {string} cmd - Command to execute
+ */
 const execCmd = async (cmd) => {
   const args = ['-c', cmd];
   const opts = { stdio: 'inherit' };
@@ -29,30 +31,38 @@ const execCmd = async (cmd) => {
       execa('bash', args, opts);
 };
 
+/**
+ * Extract a value from the plan file using jq
+ * @param {string} jqCmd - jq query command
+ */
 const jqExtract = async (jqCmd) => {
   const { stdout } = await execa('jq', ['-r', jqCmd, planFile]);
   return stdout;
 };
 
+/**
+ * Parse script and permit paths from plan file
+ */
 const setPermitAndScript = async () => {
-  console.log('Set script and permit...');
+  console.log('Parsing script and permit from plan file...');
   script = await jqExtract('.script');
   permit = await jqExtract('.permit');
 
   if (CI) {
-    // script = `/usr/src/upgrade-test-scripts/${script}`;
-    // permit = `/usr/src/upgrade-test-scripts/${permit}`;
     script = `./${script}`;
     permit = `./${permit}`;
   }
 
   if (!script || !permit) {
-    throw new Error(`Error: Failed to parse required fields from ${planFile}`);
+    throw new Error(`Failed to parse script and permit from ${planFile}`);
   }
 };
 
+/**
+ * Parse bundle file paths from plan file
+ */
 const setBundleFiles = async () => {
-  console.log('Setting bundle files from plan...');
+  console.log('Parsing bundle files from plan...');
   const sourceKey = CI ? '.bundles[].fileName' : '.bundles[].bundleID';
   const suffix = CI ? '' : '.json';
 
@@ -63,6 +73,9 @@ const setBundleFiles = async () => {
     .map((line) => `${line}${suffix}`);
 };
 
+/**
+ * Copy bundle files to target directory (non-CI environments)
+ */
 const copyFilesLocally = async () => {
   if (CI) {
     console.log('Skipping file copy: running in CI environment');
@@ -70,11 +83,6 @@ const copyFilesLocally = async () => {
   }
 
   const targetDir = './';
-
-  console.log('Copying script, permit, and plan...');
-  // await execa('cp', [script, targetDir]);
-  // await execa('cp', [permit, targetDir]);
-  // await execa('cp', [planFile, targetDir]);
 
   console.log('Copying bundle files...');
   const files = (await jqExtract('.bundles[].fileName')).split('\n');
@@ -87,66 +95,26 @@ const copyFilesLocally = async () => {
   }
 };
 
-// const copyFilesToContainer = async () => {
-//   if (CI) {
-//     console.log('Skipping file copy: running in CI environment');
-//     return;
-//   }
-
-//   const containerID = 'agoric';
-//   const targetDir = '/usr/src/';
-
-//   console.log('Copying script, permit, and plan...');
-//   await execa('docker', ['cp', script, `${containerID}:${targetDir}`]);
-//   await execa('docker', ['cp', permit, `${containerID}:${targetDir}`]);
-//   await execa('docker', ['cp', planFile, `${containerID}:${targetDir}`]);
-
-//   console.log('Copying bundle files...');
-//   const files = (await jqExtract('.bundles[].fileName')).split('\n');
-//   for (const file of files) {
-//     if (fs.existsSync(file)) {
-//       await execa('docker', ['cp', file, `${containerID}:${targetDir}`]);
-//     } else {
-//       console.warn(`Warning: File ${file} not found.`);
-//     }
-//   }
-// };
-
+/**
+ * Install bundles on the Agoric chain
+ */
 const installBundles = async () => {
   for (const b of bundleFiles) {
-    // let cmd = CI ? `cd /usr/src/upgrade-test-scripts && ` : `cd /usr/src && `;
-    let cmd = `cd . && `;
-    cmd += `echo 'Installing ${b}' && ls -sh '${b}' && agd tx swingset install-bundle --compress '@${b}' --from ${walletName} -bblock ${SIGN_BROADCAST_OPTS}`;
-    console.log(`Executing installation for bundle ${b}`);
+    const cmd = `cd . && echo 'Installing ${b}' && ls -sh '${b}' && agd tx swingset install-bundle --compress '@${b}' --from ${WALLET_NAME} -bblock ${SIGN_BROADCAST_OPTS}`;
+    console.log(`Installing bundle: ${b}`);
     await execCmd(cmd);
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 };
 
-// const openVault = async () => {
-//   const wantMinted = 450;
-//   const giveCollateral = 90;
-//   const walletAddress = 'agoric1ee9hr0jyrxhy999y755mp862ljgycmwyp4pl7q';
-
-//   if (createVault && walletAddress) {
-//     console.log('Creating the vault...');
-//     const openCmd = `${agops} vaults open --wantMinted ${wantMinted} --giveCollateral ${giveCollateral} > /tmp/want-ist.json`;
-//     await execCmd(openCmd);
-//     await new Promise((resolve) => setTimeout(resolve, 5000));
-//     const execOffer = `${agops} perf satisfaction --executeOffer /tmp/want-ist.json --from ${walletAddress} --keyring-backend=test`;
-//     console.log('Executing the offer...');
-//     await execCmd(execOffer);
-//   } else {
-//     console.log('Vault not created');
-//   }
-// };
-
+/**
+ * Submit and accept core-eval proposal
+ */
 const acceptProposal = async () => {
-  console.log(`Submitting proposal to evaluate ${script}`);
+  console.log(`Submitting core-eval proposal for ${script}`);
 
-  // const baseDir = CI ? '/usr/src/upgrade-test-scripts' : '/usr/src';
   const baseDir = '.';
-  const submitCommand = `cd ${baseDir} && agd tx gov submit-proposal swingset-core-eval ${permit} ${script} --title='Install QSTN Router' --description='Deploy QSTN ${script}' --deposit=1000000ubld --from ${walletName} ${SIGN_BROADCAST_OPTS} -o json`;
+  const submitCommand = `cd ${baseDir} && agd tx gov submit-proposal swingset-core-eval ${permit} ${script} --title='Install QSTN Router' --description='Deploy QSTN Router Contract' --deposit=1000000ubld --from ${WALLET_NAME} ${SIGN_BROADCAST_OPTS} -o json`;
   await execCmd(submitCommand);
 
   await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -161,43 +129,38 @@ const acceptProposal = async () => {
     ? result.stdout
     : (() => {
         const match = result.stdout.match(/\n(\d+)$/);
-        const proposalId = match?.[1];
-        return proposalId;
+        return match?.[1];
       })();
 
   console.log(`Submitted proposal ID: ${proposalId}`);
-
-  // console.log(`Voting on proposal ID ${proposalId}`);
-  // await execCmd(
-  //   `agd tx gov vote ${proposalId} yes --from=qstn ${SIGN_BROADCAST_OPTS}`,
-  // );
-
-  // console.log(`Fetching details for proposal ID ${proposalId}`);
-  // const detailsCommand = `agd query gov proposals --output json | jq -c '.proposals[] | select(.proposal_id == "${proposalId}" or .id == "${proposalId}") | [.proposal_id or .id, .voting_end_time, .status]'`;
-  // await execCmd(detailsCommand);
 };
 
+/**
+ * Main deployment flow
+ */
 const main = async () => {
   try {
     if (!fs.existsSync('/usr/bin/jq')) {
-      console.log('jq is not installed. Installing jq...');
+      console.log('Installing jq...');
       await execCmd('apt-get install -y jq');
     }
 
     await setPermitAndScript();
     await setBundleFiles();
 
-    console.log('bundleFiles:', bundleFiles);
-    console.log('script:', script);
-    console.log('permit:', permit);
+    console.log('Configuration:');
+    console.log('  Bundle files:', bundleFiles);
+    console.log('  Script:', script);
+    console.log('  Permit:', permit);
 
-    // await copyFilesToContainer();
     await copyFilesLocally();
-    // await openVault();
     await installBundles();
     await acceptProposal();
+
+    console.log('Deployment completed successfully!');
   } catch (err) {
-    console.error('Error:', err.message);
+    console.error('Deployment failed:', err.message);
+    process.exit(1);
   }
 };
 
