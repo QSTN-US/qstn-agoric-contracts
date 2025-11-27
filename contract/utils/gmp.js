@@ -51,9 +51,9 @@ export const constructContractCall = ({ target, functionSignature, args }) => {
  * @param {Array<ContractCall>} contractCalls - Array of contract call objects.
  * @returns {Array<number>} The GMP payload object.
  */
-export const buildGMPPayload = (contractCalls) => {
-  let abiEncodedContractCalls = [];
-  for (let call of contractCalls) {
+export const buildGMPPayload = contractCalls => {
+  const abiEncodedContractCalls = [];
+  for (const call of contractCalls) {
     const { target, functionSignature, args } = call;
     abiEncodedContractCalls.push(
       constructContractCall({ target, functionSignature, args }),

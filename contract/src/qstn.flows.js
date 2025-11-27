@@ -79,7 +79,7 @@ export const sendTransaction = async (
 
   // Find matching asset denomination
   const { denom } = NonNullish(
-    agoricAssets.find((a) => a.brand === amt.brand),
+    agoricAssets.find(a => a.brand === amt.brand),
     `${amt.brand} not registered in vbank`,
   );
 
@@ -106,7 +106,7 @@ export const sendTransaction = async (
     // Determine connection chain
     const chain =
       chainType === 'evm'
-        ? COSMOS_CHAINS['Axelar']
+        ? COSMOS_CHAINS.Axelar
         : COSMOS_CHAINS[destinationChain];
 
     const remoteChain = await orch.getChain(chain);
@@ -144,7 +144,7 @@ export const sendTransaction = async (
      *
      * @param {Error} e
      */
-    const recoverFailedTransfer = async (e) => {
+    const recoverFailedTransfer = async e => {
       await withdrawToSeat(localAccount, seat, give);
       const errorMsg = `IBC Transfer failed ${q(e)}`;
       void log(`ERROR: ${errorMsg}`);
@@ -163,7 +163,7 @@ export const sendTransaction = async (
       };
 
       // Add fee information for certain transaction types
-      if (type === 1 || type == 2) {
+      if (type === 1 || type === 2) {
         memo.fee = {
           amount: String(message.amountFee),
           recipient: gmpAddresses.AXELAR_GAS,

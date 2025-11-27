@@ -3,8 +3,8 @@ import { E } from '@endo/far';
 import { prepareChainHubAdmin } from '@agoric/orchestration/src/exos/chain-hub-admin.js';
 import { withOrchestration } from '@agoric/orchestration/src/utils/start-helper.js';
 import { registerChainsAndAssets } from '@agoric/orchestration/src/utils/chain-hub-helper.js';
-import { sendTransaction } from './qstn.flows.js';
 import { makeTracer } from '@agoric/internal';
+import { sendTransaction } from './qstn.flows.js';
 
 /**
  * @import {Remote, Vow} from '@agoric/vow';
@@ -50,7 +50,7 @@ export const contract = async (
   // UNTIL https://github.com/Agoric/agoric-sdk/issues/9066
   const logNode = E(privateArgs.storageNode).makeChildNode('log');
   /** @type {(msg: string) => Vow<void>} */
-  const log = (msg) => vowTools.watch(E(logNode).setValue(msg));
+  const log = msg => vowTools.watch(E(logNode).setValue(msg));
 
   const makeSendTransaction = orchestrate(
     'sendTransaction',
