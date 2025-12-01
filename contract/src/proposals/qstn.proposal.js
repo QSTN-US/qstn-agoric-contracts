@@ -22,14 +22,14 @@ const contractName = 'qstn';
  * @param {BootstrapPowers} powers
  * @param {*} config
  */
-export const startQSTNCharter = (powers, config) =>
+export const startQstnCharter = (powers, config) =>
   startMyCharter(contractName, powers, config);
 
 /**
  * @param {BootstrapPowers} powers
  * @param {*} config
  */
-export const startQSTNCommittee = (powers, config) =>
+export const startQstnCommittee = (powers, config) =>
   startMyCommittee(contractName, powers, config);
 
 /**
@@ -58,7 +58,7 @@ export const installQstnContract = async (powers, config) => {
  *    }};
  * }} config
  */
-export const startQstnRouter = async (powers, config) => {
+export const startQstnContract = async (powers, config) => {
   const {
     consume: {
       agoricNames,
@@ -180,9 +180,9 @@ export const main = (
 ) =>
   allValues({
     installation: installQstnContract(permittedPowers, config),
-    committeeFacets: startQSTNCommittee(permittedPowers, config),
-    contractFacets: startQstnRouter(permittedPowers, config),
-    charterFacets: startQSTNCharter(permittedPowers, config),
+    committeeFacets: startQstnCommittee(permittedPowers, config),
+    contractFacets: startQstnContract(permittedPowers, config),
+    charterFacets: startQstnCharter(permittedPowers, config),
   });
 
 /** @type {BootstrapManifestPermit} */
