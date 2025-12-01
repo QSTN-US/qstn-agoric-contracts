@@ -1,0 +1,12 @@
+// This file contains .js-specific compiler config for JavaScript projects
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "noEmit": true,
+    "strictNullChecks": true,
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0"
+  },
+  "include": ["src/**/*.js", "src/**/*.d.ts", "test/**/*.js"]
+}

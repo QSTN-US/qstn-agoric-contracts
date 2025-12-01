@@ -4,6 +4,7 @@ import '@agoric/vats/src/types.js';
  * @import {axelarGmpMessageType} from '../utils/gmp';
  * @import {COSMOS_CHAINS, EVM_CHAINS, ActiveChainType} from './chains.js';
  * @import {ChainInfo} from "@agoric/orchestration/src/orchestration-api.js"
+ * @import {AdminFacet} from '@agoric/zoe/src/zoeService/utils';
  */
 
 /**
@@ -42,6 +43,23 @@ import '@agoric/vats/src/types.js';
  *   channelId: string;
  *   remoteDenom: string;
  * }} RemoteChannelInfo
+ */
+
+/**
+ *
+ * @typedef {PromiseSpaceOf<{
+ *   qstnCommitteeCreatorFacet: import('@agoric/governance/src/committee.js').CommitteeElectorateCreatorFacet
+ *   qstnKit: MapStore<Brand, QSTNKit>,
+ * }>
+ * } QstnBootstrapSpace
+ *
+ * @typedef {object} QSTNKit
+ * @property {string} label
+ * @property {Instance} qstn
+ * @property {Instance} qstnGovernor
+ * @property {Awaited<ReturnType<Awaited<ReturnType<import('../src/qstn.router.governance.js')['start']>>['creatorFacet']['getLimitedCreatorFacet']>>} psmCreatorFacet
+ * @property {GovernorCreatorFacet<import('../src/qstn.router.governance.js')['start']>} qstnGovernorCreatorFacet
+ * @property {AdminFacet} qstnAdminFacet
  */
 
 export {};
