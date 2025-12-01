@@ -3,7 +3,7 @@ import { E } from '@endo/far';
 import { prepareChainHubAdmin } from '@agoric/orchestration/src/exos/chain-hub-admin.js';
 import { withOrchestration } from '@agoric/orchestration/src/utils/start-helper.js';
 import { registerChainsAndAssets } from '@agoric/orchestration/src/utils/chain-hub-helper.js';
-import { makeTracer } from '@agoric/internal';
+import { handleParamGovernance } from '@agoric/governance/src/contractHelper.js';
 import { sendTransaction } from './qstn.flows.js';
 
 /**
@@ -13,19 +13,22 @@ import { sendTransaction } from './qstn.flows.js';
  * @import {CosmosChainInfo, Denom, DenomDetail} from '@agoric/orchestration';
  * @import {Marshaller, StorageNode} from '@agoric/internal/src/lib-chainStorage.js';
  * @import {ZCF} from '@agoric/zoe';
+ * @import {GovernanceTerms} from '@agoric/governance/src/types.js';
+ * @import {Invitation} from '@agoric/zoe';
+ * @import {NamesByAddressAdmin} from '@agoric/vats';
  */
-
-const trace = makeTracer('qstnRouterV1');
 
 /**
  * Orchestration contract to be wrapped by withOrchestration for Zoe
  *
- * @param {ZCF} zcf
- * @param {OrchestrationPowers & {
+ * @param {ZCF<GovernanceTerms<{}>>} zcf
+ * @param {OrchestrationPowers &  {
  *   marshaller: Remote<Marshaller>;
  *   chainInfo?: Record<string, CosmosChainInfo>;
  *   assetInfo?: [Denom, DenomDetail & { brandKey?: string }][];
  *   storageNode: Remote<StorageNode>;
+ *   initialPoserInvitation: Invitation;
+ *   nameByAddressAdmin: NamesByAddressAdmin;
  * }} privateArgs
  * @param {Zone} zone
  * @param {OrchestrationTools} tools
@@ -34,9 +37,15 @@ export const contract = async (
   zcf,
   privateArgs,
   zone,
-  { chainHub, orchestrate, vowTools, zoeTools },
+  { chainHub, orchestrate, vowTools, zoeTools, baggage },
 ) => {
-  trace('Inside Contract');
+  const { makeDurableGovernorFacet } = await handleParamGovernance(
+    zcf,
+    privateArgs.initialPoserInvitation,
+    {},
+    privateArgs.storageNode,
+    privateArgs.marshaller,
+  );
 
   registerChainsAndAssets(
     chainHub,
@@ -78,15 +87,9 @@ export const contract = async (
     },
   );
 
-  const creatorFacet = zone.exo(
-    'QSTN Creator',
-    M.interface('QSTN Creator', {
-      registerChain: M.call(M.string(), M.any(), M.any()).returns(M.any()),
-      registerAsset: M.call(M.any(), M.any()).returns(M.any()),
-      pause: M.call().returns(M.undefined()),
-      unpause: M.call().returns(M.undefined()),
-      getPausedInvitations: M.call().returns(M.arrayOf(M.string())),
-    }),
+  const { governorFacet } = makeDurableGovernorFacet(
+    baggage,
+    chainHubAdminFacet,
     {
       /**
        * Register a new chain in the ChainHub
@@ -95,13 +98,12 @@ export const contract = async (
        * @param {any} ibcConnectionInfo - IBC connection information
        * @returns {Promise<void>}
        */
-      registerChain(chainName, chainInfo, ibcConnectionInfo) {
-        return chainHubAdminFacet.registerChain(
+      registerChain: (chainName, chainInfo, ibcConnectionInfo) =>
+        chainHubAdminFacet.registerChain(
           chainName,
           chainInfo,
           ibcConnectionInfo,
-        );
-      },
+        ),
 
       /**
        * Register a new asset in the ChainHub
@@ -109,41 +111,14 @@ export const contract = async (
        * @param {DenomDetail} detail - Asset details
        * @returns {Promise<void>}
        */
-      registerAsset(denom, detail) {
-        return chainHubAdminFacet.registerAsset(denom, detail);
-      },
-
-      /**
-       * Pause the contract by blocking the sendTransaction invitation
-       * Uses zcf.setOfferFilter to prevent sendTransaction offers
-       */
-      pause() {
-        trace('Pausing contract - blocking sendTransaction invitation');
-        zcf.setOfferFilter(['sendTransaction']);
-      },
-
-      /**
-       * Unpause the contract by clearing all blocked invitations
-       * Uses zcf.setOfferFilter to re-enable all invitations
-       */
-      unpause() {
-        trace('Unpausing contract - clearing offer filter');
-        zcf.setOfferFilter([]);
-      },
-
-      /**
-       * Get the list of currently paused invitation descriptions
-       * @returns {Array<string>} Array of blocked invitation description strings
-       */
-      getPausedInvitations() {
-        return zcf.getOfferFilter();
-      },
+      registerAsset: (denom, detail) =>
+        chainHubAdminFacet.registerAsset(denom, detail),
     },
   );
 
   return harden({
     publicFacet,
-    creatorFacet,
+    creatorFacet: governorFacet,
   });
 };
 harden(contract);

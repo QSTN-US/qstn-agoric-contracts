@@ -1,3 +1,8 @@
+import '@agoric/governance/src/types-ambient';
+import '@agoric/vats/src/core/types';
+import '@agoric/ertp/exported';
+import '@agoric/zoe/exported';
+
 import '@agoric/vats/src/types.js';
 
 /**
@@ -49,7 +54,6 @@ import '@agoric/vats/src/types.js';
  *
  * @typedef {PromiseSpaceOf<{
  *   qstnCommitteeCreatorFacet: import('@agoric/governance/src/committee.js').CommitteeElectorateCreatorFacet
- *   qstnKit: MapStore<Brand, QSTNKit>,
  * }>
  * } QstnBootstrapSpace
  *
@@ -57,8 +61,8 @@ import '@agoric/vats/src/types.js';
  * @property {string} label
  * @property {Instance} qstn
  * @property {Instance} qstnGovernor
- * @property {Awaited<ReturnType<Awaited<ReturnType<import('../src/qstn.router.governance.js')['start']>>['creatorFacet']['getLimitedCreatorFacet']>>} psmCreatorFacet
- * @property {GovernorCreatorFacet<import('../src/qstn.router.governance.js')['start']>} qstnGovernorCreatorFacet
+ * @property {Awaited<ReturnType<Awaited<ReturnType<import('../src/archive/qstn.router.governance.js')['start']>>['creatorFacet']['getLimitedCreatorFacet']>>} psmCreatorFacet
+ * @property {GovernorCreatorFacet<import('../src/archive/qstn.router.governance.js')['start']>} qstnGovernorCreatorFacet
  * @property {AdminFacet} qstnAdminFacet
  */
 

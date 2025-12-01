@@ -8,5 +8,10 @@
     "moduleResolution": "node",
     "ignoreDeprecations": "6.0"
   },
-  "include": ["src/**/*.js", "src/**/*.d.ts", "test/**/*.js"]
+  "include": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "test/**/*.js",
+    "tools/config.js"
+  ]
 }
