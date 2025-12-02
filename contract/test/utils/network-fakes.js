@@ -29,7 +29,7 @@ import { defaultMockAckMap, errorAcknowledgments } from './ibc-mocks.js';
  * with the host. `version` is a String or JSON string as determined by the IBC
  * Application protol.
  *
- * @param version requested version string
+ * @param {any} version requested version string
  * @param {object} params mock parameters to add to version string
  * @param {string} params.address for ICS-27, the bech32 address provided by the host
  */
@@ -103,7 +103,7 @@ export const ibcBridgeMocks = {
  *
  * Has extra `setMockAck` and `setAddressPrefix` met
  *
- * @param zone
+ * @param {any} zone
  */
 export const makeFakeIBCBridge = zone => {
   let bridgeHandler;
@@ -188,7 +188,7 @@ export const makeFakeIBCBridge = zone => {
      * Set a map of requests to responses to simulate different scenarios. Defaults to `defaultMockAckMap`.
      * See `@agoric/orchestration/tools/ibc-mocks.js` for helpers to build this map.
      *
-     * @param ackMap
+     * @param {any} ackMap
      */
     setMockAck: ackMap => {
       mockAckMap = ackMap;
@@ -196,7 +196,7 @@ export const makeFakeIBCBridge = zone => {
     /**
      * Set a new bech32 prefix for the mocked ICA channel. Defaults to `cosmos`.
      *
-     * @param newPrefix
+     * @param {any} newPrefix
      */
     setAddressPrefix: newPrefix => {
       bech32Prefix = newPrefix;

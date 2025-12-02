@@ -1,3 +1,4 @@
+/* eslint-disable jsdoc/require-returns-type */
 /* eslint-disable @jessie.js/safe-await-separator */
 
 import childProcessAmbient from 'child_process';

@@ -1,8 +1,5 @@
 import { Fail } from '@endo/errors';
-import {
-  type AgoricNamesRemotes,
-  makeAgoricNamesRemotesFromFakeStorage,
-} from '@agoric/vats/tools/board-utils.js';
+import { makeAgoricNamesRemotesFromFakeStorage } from '@agoric/vats/tools/board-utils.js';
 import { fetchCoreEvalRelease, makeSwingsetTestKit } from './support2.js';
 import { makeWalletFactoryDriver } from './drivers.js';
 
@@ -25,8 +22,9 @@ export const makeWalletFactoryContext = async (
   console.timeLog('DefaultTestContext', 'vaultFactoryKit');
 
   // has to be late enough for agoricNames data to have been published
-  const agoricNamesRemotes: AgoricNamesRemotes =
-    makeAgoricNamesRemotesFromFakeStorage(swingsetTestKit.storage);
+  const agoricNamesRemotes = makeAgoricNamesRemotesFromFakeStorage(
+    swingsetTestKit.storage,
+  );
   const refreshAgoricNamesRemotes = () => {
     Object.assign(
       agoricNamesRemotes,
@@ -36,7 +34,7 @@ export const makeWalletFactoryContext = async (
   agoricNamesRemotes.brand.ATOM || Fail`ATOM missing from agoricNames`;
   console.timeLog('DefaultTestContext', 'agoricNamesRemotes');
 
-  const evalReleasedProposal = async (release: string, name: string) => {
+  const evalReleasedProposal = async (release, name) => {
     const materials = await fetchCoreEvalRelease({
       repo: 'Agoric/agoric-sdk',
       release,
@@ -63,7 +61,3 @@ export const makeWalletFactoryContext = async (
     walletFactoryDriver,
   };
 };
-
-export type WalletFactoryTestContext = Awaited<
-  ReturnType<typeof makeWalletFactoryContext>
->;

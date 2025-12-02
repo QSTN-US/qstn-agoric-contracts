@@ -1,3 +1,5 @@
+/* eslint-disable jsdoc/require-param-type */
+/* eslint-disable jsdoc/require-param */
 import { Any } from '@agoric/cosmic-proto/google/protobuf/any.js';
 import { CosmosResponse } from '@agoric/cosmic-proto/icq/v1/packet.js';
 // import {

@@ -53,6 +53,7 @@ export const mockWalletFactory = (
         const brand = await E(issuer).getBrand();
         //         /** @type {[Brand, Purse]} */
         /** @type {[Brand<any>, Purse<any, any>]} */
+        // @ts-expect-error invalid type
         const entry = [brand, purse];
         return entry;
       }),

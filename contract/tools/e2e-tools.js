@@ -1,3 +1,5 @@
+/* eslint-disable import/no-extraneous-dependencies */
+/* eslint-disable jsdoc/check-param-names */
 /** global harden */
 import { assert } from '@endo/errors';
 import { E, Far } from '@endo/far';
@@ -205,7 +207,6 @@ export const provisionSmartWallet = async (
 
   /** @param {import('@agoric/smart-wallet/src/smartWallet.js').BridgeAction} bridgeAction */
   const sendAction = async bridgeAction => {
-    // eslint-disable-next-line no-undef
     const capData = q.toCapData(harden(bridgeAction));
     const offerBody = JSON.stringify(capData);
     const txInfo = await agd.tx(
@@ -268,7 +269,6 @@ export const provisionSmartWallet = async (
     for await (const { balances: haystack } of cosmosBalanceUpdates()) {
       for (const candidate of haystack) {
         if (candidate.denom === denom) {
-          // eslint-disable-next-line no-undef
           const amt = harden({ brand, value: BigInt(candidate.amount) });
           yield amt;
         }
@@ -502,7 +502,6 @@ export const makeE2ETools = (
         installed: confirm,
       });
     }
-    // eslint-disable-next-line no-undef
     return harden(bundles);
   };
 
@@ -658,7 +657,6 @@ export const makeE2ETools = (
         installed: confirm,
       });
     }
-    // eslint-disable-next-line no-undef
     return harden(bundles);
   };
 
@@ -757,7 +755,6 @@ export const seatLike = updates => {
       throw reason;
     }
   })();
-  // eslint-disable-next-line no-undef
   return harden({
     getOfferResult: () => sync.result.promise,
     getPayoutAmounts: () => sync.payouts.promise,

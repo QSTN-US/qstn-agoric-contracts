@@ -20,8 +20,7 @@
     "solidity"
   ],
   "resolutions": {
-    "@agoric/vats": "^0.16.0-u21.0",
-    "@agoric/zoe": "^0.27.0-u21.0",
+    "aggregate-error": "3.0.0",
     "esm": "github:agoric-labs/esm.git#Agoric-built"
   },
   "keywords": [],
@@ -30,7 +29,6 @@
   "description": "",
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
   "devDependencies": {
-    "@agoric/eslint-config": "^0.4.1-u11wf.0",
     "concurrently": "^9.1.2",
     "patch-package": "^8.0.0",
     "prettier": "^3.5.3"

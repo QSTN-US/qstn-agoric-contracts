@@ -146,7 +146,6 @@ export const bootAndInstallBundles = async (t, bundleRoots) => {
   const bundles = await installBundles(
     t.context.bundleCache,
     bundleRoots,
-    // @ts-expect-error type formatting
     (bundleID, bundle, _name) => vatAdminState.installBundle(bundleID, bundle),
     t.log,
   );

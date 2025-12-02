@@ -1,6 +1,7 @@
+/* global globalThis */
 const ambientSetTimeout = globalThis.setTimeout;
 
-const sleep = (ms, { log = msg => {}, setTimeout = ambientSetTimeout } = {}) =>
+const sleep = (ms, { log = _msg => {}, setTimeout = ambientSetTimeout } = {}) =>
   new Promise(resolve => {
     log(`Sleeping for ${ms}ms...`);
     setTimeout(resolve, ms);
@@ -13,13 +14,14 @@ const retryUntilCondition = async (
   {
     maxRetries = 6,
     retryIntervalMs = 3500,
-    log = msg => {},
+    log = _msg => {},
     setTimeout = ambientSetTimeout,
   } = {},
 ) => {
   console.log({ maxRetries, retryIntervalMs, message });
   let retries = 0;
 
+  await null;
   while (retries < maxRetries) {
     try {
       const result = await operation();
@@ -34,6 +36,7 @@ const retryUntilCondition = async (
       }
     }
 
+    // eslint-disable-next-line no-plusplus
     retries++;
     console.log(
       `Retry ${retries}/${maxRetries} - Waiting for ${retryIntervalMs}ms for ${message}...`,
