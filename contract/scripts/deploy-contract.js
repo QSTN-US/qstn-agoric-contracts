@@ -7,7 +7,7 @@ import { basename } from 'node:path';
 
 import { makeNodeBundleCache } from '@endo/bundle-source/cache.js';
 import { parseArgs } from 'node:util';
-import { makeE2ETools } from '../tools/e2e-tools.js';
+import { makeE2ETools } from '../tools/e2e-tools-deploy.js';
 
 /** @type {import('node:util').ParseArgsConfig['options']} */
 const options = {

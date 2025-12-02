@@ -1,15 +1,6 @@
-// @ts-check
-
 import { E, Far } from '@endo/far';
 import { batchVstorageQuery } from './batchQuery.js';
 import { makeClientMarshaller } from './marshalTables.js';
-
-/**
- * @import {ERef} from '@endo/far';
- * @import {VStorage} from './batchQuery.js';
- * @import {UpdateRecord} from '@agoric/smart-wallet/src/smartWallet.js';
- * @import {Marshal} from '@endo/marshal';
- */
 
 /**
  * Iter tools...
@@ -57,7 +48,7 @@ export async function* mapIter(src, fn) {
 /**
  * @param {string} key
  * @param {object} io
- * @param {VStorage} io.vstorage
+ * @param {import('./batchQuery.js').VStorage} io.vstorage
  * @param {(ms: number, opts?: unknown) => Promise<void>} io.delay
  */
 export async function* eachVstorageUpdate(key, { vstorage, delay }) {
@@ -83,14 +74,14 @@ export async function* eachVstorageUpdate(key, { vstorage, delay }) {
  * @param {string} addr
  * @param {object} powers
  * @param {QueryTool} powers.query
- * @param {VStorage} powers.vstorage
+ * @param {import('./batchQuery.js').VStorage} powers.vstorage
  */
 export const makeWalletView = (addr, { query, vstorage }) => {
   return Far('WalletQuery', {
     current: () => query.queryData(`published.wallet.${addr}.current`),
     /**
      * TODO: visit in chunks by block
-     * @param {ERef<{visit: (r: UpdateRecord) => void}>} visitor
+     * @param {import('@endo/eventual-send').ERef<{visit: (r: import('@agoric/smart-wallet/src/smartWallet.js').UpdateRecord) => void}>} visitor
      * @param {number} [minHeight]
      */
     history: async (visitor, minHeight) => {
@@ -108,10 +99,16 @@ export const makeWalletView = (addr, { query, vstorage }) => {
 /** @typedef {ReturnType<typeof makeWalletView>} WalletView } */
 
 /**
- * @param {VStorage} vstorage
- * @param {Marshal<string>} [m]
+ * @param {import('./batchQuery.js').VStorage} vstorage
+ * @param {import('@endo/marshal').Marshal<string | null>} [m]
  */
-export const makeQueryKit = (vstorage, m = makeClientMarshaller()) => {
+// export const makeQueryKit = (vstorage, m = makeClientMarshaller()) => {
+export const makeQueryKit = (
+  vstorage,
+  m = /** @type {import('@endo/marshal').Marshal<string | null>} */ (
+    makeClientMarshaller()
+  ),
+) => {
   /** @param {['children' | 'data', string][]} paths */
   const batchQuery = async paths =>
     batchVstorageQuery(vstorage, m.fromCapData, paths);

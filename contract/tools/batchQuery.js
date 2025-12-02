@@ -1,13 +1,9 @@
-// @ts-check
+import { assert } from '@endo/errors';
 import { E } from '@endo/far';
 
-/**
- * @import {FromCapData} from '@endo/marshal';
- * @import {ERef} from '@endo/eventual-send';
- * @import {LCD} from './makeHttpClient.js';
- */
-
 /** @typedef {'children' | 'data'} AgoricChainStoragePathKind */
+/** @template T @typedef {import('@endo/marshal').FromCapData<T>} FromCapData<T> */
+/** @template T @typedef {import('@endo/eventual-send').ERef<T>} ERef<T> */
 
 /**
  * @param {[kind: AgoricChainStoragePathKind, item: string]} path
@@ -38,7 +34,7 @@ async function* mapHistory(f, chunks) {
 }
 
 /**
- * @param {ERef<LCD>} lcd
+ * @param {ERef<import('./makeHttpClient.js').LCD>} lcd
  */
 export const makeVStorage = lcd => {
   const getJSON = (href, options) => E(lcd).getJSON(href, options);
@@ -138,6 +134,9 @@ export const batchVstorageQuery = async (vstorage, unmarshal, paths) => {
 
   return Promise.all(requests).then(responses =>
     responses.map((res, index) => {
+      // console.log('responses', res);
+      // console.log('responses', index);
+
       if (paths[index][0] === 'children') {
         return [
           pathToKey(paths[index]),

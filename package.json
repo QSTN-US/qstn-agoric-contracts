@@ -9,10 +9,7 @@
     "test": "yarn workspace deploy test && yarn workspace solidity test",
     "lint:types": "yarn workspace deploy lint:types && yarn workspace contract lint:types && yarn workspace solidity lint:types",
     "build:solidity": "cd solidity && yarn build",
-    "build:deploy": "cd deploy && yarn build",
-    "build": "yarn build:solidity && yarn build:local-env",
-    "deploy:qstnRouter": "cd deploy && yarn deploy",
-    "deploy:contracts": "yarn deploy:qstnRouter",
+    "build": "yarn build:solidity",
     "postinstall": "patch-package"
   },
   "private": true,
@@ -22,14 +19,10 @@
     "deploy",
     "solidity"
   ],
-  "prettier": {
-    "semi": true,
-    "singleQuote": true,
-    "printWidth": 80
-  },
   "resolutions": {
     "@agoric/vats": "^0.16.0-u21.0",
-    "@agoric/zoe": "^0.27.0-u21.0"
+    "@agoric/zoe": "^0.27.0-u21.0",
+    "esm": "github:agoric-labs/esm.git#Agoric-built"
   },
   "keywords": [],
   "author": "",
@@ -41,5 +34,28 @@
     "concurrently": "^9.1.2",
     "patch-package": "^8.0.0",
     "prettier": "^3.5.3"
-  }
+  },
+  "prettier": {
+    "trailingComma": "all",
+    "arrowParens": "avoid",
+    "singleQuote": true,
+    "plugins": [
+      "prettier-plugin-tailwindcss"
+    ]
+  },
+  "nohoist": [
+    "**/ava",
+    "**/ava/**",
+    "**/tsx",
+    "**/tsx/**",
+    "contract/**",
+    "contract/**/@endo/**",
+    "**/@endo/ses-ava",
+    "**/@noble/hashes",
+    "**/@noble/hashes/**",
+    "**/starshipjs",
+    "**/starshipjs/**",
+    "**/@agoric/cosmic-proto",
+    "**/@agoric/cosmic-proto/**"
+  ]
 }

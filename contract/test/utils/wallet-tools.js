@@ -7,19 +7,20 @@
 import { E, Far } from '@endo/far';
 import { makePromiseKit } from '@endo/promise-kit';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { makeNotifier } from '@agoric/notifier';
+
+import '@agoric/zoe/src/zoeService/types-ambient.js';
 
 import { allValues, mapValues } from '../../src/utilities/objectTools.js';
 
 /**
+ * @import {Amount, Brand, Issuer, Payment, Purse} from '@agoric/ertp/src/types.js';
  * @import {ERef} from '@endo/far';
  * @import {OfferSpec} from '@agoric/smart-wallet/src/offers.js';
  * @import {UpdateRecord} from '@agoric/smart-wallet/src/smartWallet.js';
  * @import {InvitationSpec} from '@agoric/smart-wallet/src/invitations.js';
- * @import {Brand, Purse, Payment} from '@agoric/ertp/src/types.js';
  * @import {PromiseKit} from '@endo/promise-kit';
- * @import {ZoeService, IssuerKeywordRecord, AmountKeywordRecord} from '@agoric/zoe';
+ * @import {AmountKeywordRecord, ZoeService, IssuerKeywordRecord} from '@agoric/zoe';
  */
 
 const { values } = Object;
@@ -50,7 +51,8 @@ export const mockWalletFactory = (
       values(issuerKeywordRecord).map(async issuer => {
         const purse = await E(issuer).makeEmptyPurse();
         const brand = await E(issuer).getBrand();
-        /** @type {[Brand, Purse]} */
+        //         /** @type {[Brand, Purse]} */
+        /** @type {[Brand<any>, Purse<any, any>]} */
         const entry = [brand, purse];
         return entry;
       }),
@@ -63,7 +65,9 @@ export const mockWalletFactory = (
     assert(invitationPurse);
 
     const depositFacet = Far('DepositFacet', {
-      /** @param {Payment} pmt */
+      // /** @param {Payment} pmt */
+      /** @param {Payment<any, any>} pmt */
+
       receive: async pmt => {
         const pBrand = await E(pmt).getAllegedBrand();
         if (!purseByBrand.has(pBrand))
@@ -92,22 +96,16 @@ export const mockWalletFactory = (
     const getPurseInvitation = async invitationSpec => {
       const invitationAmount = await E(invitationPurse).getCurrentAmount();
       // TODO: check instance too
-      assert(
-        Array.isArray(invitationAmount.value),
-        'invitation value must be an array',
+      const detail = invitationAmount.value.find(
+        d => d.description === invitationSpec.description,
       );
-      // const detail = invitationAmount.value.find(
-      //   d => d.description === invitationSpec.description,
-      // );
-      const detail = invitationAmount;
       detail ||
         Fail`${q(invitationSpec.description)} not found in ${q(
           invitationAmount,
         )}`;
-      // return E(invitationPurse).withdraw(
-      //   harden({ brand: invitationAmount.brand, value: [detail] }),
-      // );
-      return E(invitationPurse).withdraw(invitationAmount);
+      return E(invitationPurse).withdraw(
+        harden({ brand: invitationAmount.brand, value: [detail] }),
+      );
     };
 
     const offerToInvitationMakers = new Map();

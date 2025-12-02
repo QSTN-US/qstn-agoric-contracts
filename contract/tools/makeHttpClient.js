@@ -1,10 +1,5 @@
-// @ts-check
+import { assert } from '@endo/errors';
 import { Far } from '@endo/far';
-
-/**
- * @import {JsonRpcRequest} from '@cosmjs/json-rpc';
- * @import {RpcClient} from '@cosmjs/tendermint-rpc';
- */
 
 const { freeze } = Object;
 
@@ -30,11 +25,11 @@ const filterBadStatus = res => {
  * {@link https://github.com/Agoric/agoric-sdk/wiki/OCap-Discipline|OCap Discipline}.
  *
  * @param {string} url
- * @param {typeof window.fetch} fetch
- * @returns {RpcClient}
+ * @param {typeof globalThis.fetch} fetch
+ * @returns {import('@cosmjs/tendermint-rpc').RpcClient}
  */
 export const makeHttpClient = (url, fetch) => {
-  const headers = { 'Access-Control-Allow-Origin': '*' }; // XXX needed?
+  const headers = {}; // XXX needed?
 
   // based on cosmjs 0.30.1:
   // https://github.com/cosmos/cosmjs/blob/33271bc51cdc865cadb647a1b7ab55d873637f39/packages/tendermint-rpc/src/rpcclients/http.ts#L37
@@ -45,7 +40,7 @@ export const makeHttpClient = (url, fetch) => {
     },
 
     /**
-     * @param {JsonRpcRequest} request
+     * @param {import('@cosmjs/json-rpc').JsonRpcRequest} request
      */
     execute: async request => {
       const settings = {
@@ -85,7 +80,6 @@ export const makeAPI = (apiAddress, { fetch }) => {
       keepalive: true,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
         ...options.headers,
       },
     };

@@ -4,7 +4,6 @@
   "version": "1.0.0",
   "type": "module",
   "devDependencies": {
-    "@agoric/deploy-script-support": "dev",
     "agoric": "dev",
     "esbuild": "^0.25.2",
     "execa": "^9.5.2",
@@ -24,16 +23,9 @@
       "js": true,
       "ts": "module"
     },
-    "files": [
-      "test/**/*.test.*"
-    ],
-    "nodeArguments": [
-      "--loader=ts-blank-space/register",
-      "--no-warnings"
-    ],
-    "require": [
-      "@endo/init/debug.js"
-    ],
+    "files": ["test/**/*.test.*"],
+    "nodeArguments": ["--loader=ts-blank-space/register", "--no-warnings"],
+    "require": ["@endo/init/debug.js"],
     "timeout": "20m",
     "workerThreads": false
   },

@@ -7,17 +7,17 @@ import { extractPowers } from '@agoric/vats/src/core/utils.js';
 
 import { main, permit } from '../src/proposals/qstn.proposal.js';
 
-import { mockBootstrapPowers } from './utilities/boot-tools.js';
+import { mockBootstrapPowers } from './utils/boot-tools.js';
 import { makeBundleCacheContext } from '../tools/bundle-tools.js';
 import { NonNullish } from '../src/utilities/objectTools.js';
-import { mockWalletFactory, seatLike } from './utilities/wallet-tools.js';
+import { mockWalletFactory, seatLike } from './utils/wallet-tools.js';
 import { INVITATION_MAKERS_DESC } from '../src/utilities/start-governed-contract.js';
 import { installGovContracts } from './lib-gov-test/puppet-gov.js';
 
 /**
  * @import {QuestionDetails} from '@agoric/governance/src/types.js';
  * @import {OfferSpec} from '@agoric/smart-wallet/src/offers.js';
- * @import {MockWallet} from './utilities/wallet-tools.js';
+ * @import {MockWallet} from './utils/wallet-tools.js';
  * @import {ExecutionContext, TestFn} from 'ava';
  */
 

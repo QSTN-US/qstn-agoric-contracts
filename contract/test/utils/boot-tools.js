@@ -10,13 +10,13 @@ import { AmountMath, AssetKind, makeIssuerKit } from '@agoric/ertp';
 import { makeScalarMapStore } from '@agoric/store';
 import { makeDurableZone } from '@agoric/zone/durable.js';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { makeMockChainStorageRoot } from '@agoric/internal/src/storage-test-utils.js';
 
 import { mockWalletFactory } from './wallet-tools.js';
 import { getBundleId } from '../../tools/bundle-tools.js';
 
-/** @import { makeNodeBundleCache } from '@endo/bundle-source/cache.js'; */
+import '@agoric/vats/src/core/types-ambient.js';
+import '@agoric/zoe/src/zoeService/types-ambient.js';
 
 const { entries } = Object;
 
@@ -32,7 +32,7 @@ const { entries } = Object;
  */
 export const mockBootstrapPowers = async (
   log,
-  spaceNames = ['installation', 'instance', 'issuer', 'brand'],
+  spaceNames = ['installation', 'instance', 'issuer', 'brand', 'vbankAsset'],
 ) => {
   const baggage = makeScalarMapStore('testing');
   const zone = makeDurableZone(baggage);
@@ -115,7 +115,7 @@ export const mockBootstrapPowers = async (
  * @param {(...args: unknown[]) => void} log
  *
  * @typedef {(id: string, bundle: CachedBundle, name: string) => Promise<void>} InstallBundle
- * @typedef {Awaited<ReturnType<makeNodeBundleCache>>} BundleCache
+ * @typedef {Awaited<ReturnType<import('@endo/bundle-source/cache.js').makeNodeBundleCache>>} BundleCache
  * @typedef {{ moduleFormat: 'endoZipBase64', endoZipBase64Sha512: string }} CachedBundle
  */
 export const installBundles = async (
@@ -146,6 +146,7 @@ export const bootAndInstallBundles = async (t, bundleRoots) => {
   const bundles = await installBundles(
     t.context.bundleCache,
     bundleRoots,
+    // @ts-expect-error type formatting
     (bundleID, bundle, _name) => vatAdminState.installBundle(bundleID, bundle),
     t.log,
   );
@@ -185,6 +186,8 @@ export const makeMockTools = async (t, bundleCache) => {
 
   const { agoricNames, board, zoe, namesByAddressAdmin } = powers.consume;
 
+  // /** @type {Record<string, Issuer<any, any>>} */
+  /** @type {Record<string, any>} */
   const smartWalletIssuers = {
     Invitation: await E(zoe).getInvitationIssuer(),
     IST: await E(zoe).getFeeIssuer(),
@@ -196,7 +199,7 @@ export const makeMockTools = async (t, bundleCache) => {
   const boardMarshaller = await E(board).getPublishingMarshaller();
   const walletFactory = mockWalletFactory(
     { namesByAddressAdmin, zoe },
-    smartWalletIssuers,
+    /** @type {any} */ smartWalletIssuers,
   );
 
   let pid = 0;

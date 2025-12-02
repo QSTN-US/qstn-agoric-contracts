@@ -19,8 +19,8 @@ const centralSupplyPath = myRequire.resolve(
   '@agoric/vats/src/centralSupply.js',
 );
 
-/** @typedef {Installation<typeof start>} CentralSupplyInstallation */
-/** @typedef {Awaited<ReturnType<makeNodeBundleCache>>} BundleCache */
+/** @typedef {Installation<typeof import('@agoric/vats/src/centralSupply.js').start>} CentralSupplyInstallation */
+/** @typedef {Awaited<ReturnType<import('@endo/bundle-source/cache.js').makeNodeBundleCache>>} BundleCache */
 
 /**
  * Make a stable faucet; that is: a tool to mint the Zoe fee token.

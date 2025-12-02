@@ -19,7 +19,7 @@ import {
   configureOptions,
 } from './tools/rollup-plugin-core-eval.js';
 import { permit as qstnPermit } from './src/proposals/qstn.proposal.js';
-import { permit as boardAuxPermit } from './src/utilities/board-aux.core.js';
+// import { permit as boardAuxPermit } from './src/utilities/board-aux.core.js';
 import { getBuildOpts } from './tools/qstn-builder.js';
 
 /**
@@ -69,12 +69,12 @@ const config = getBuildOpts('devnet', [
   'peer=osmosis:connection-6:channel-5:uosmo',
   'neutron:connection-9:channel-7:untrn',
 ]).then(buildOpts => [
-  config1({
-    name: 'board-aux',
-    permit: boardAuxPermit,
-    coreEntry: `./src/utilities/board-aux.core.js`,
-    contractEntry: null,
-  }),
+  // config1({
+  //   name: 'board-aux',
+  //   permit: boardAuxPermit,
+  //   coreEntry: `./src/utilities/board-aux.core.js`,
+  //   contractEntry: null,
+  // }),
   config1({
     name: 'qstn',
     permit: qstnPermit,

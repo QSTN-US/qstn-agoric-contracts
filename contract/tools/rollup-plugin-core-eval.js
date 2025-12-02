@@ -1,7 +1,8 @@
 // @ts-check
-/* eslint-disable import/no-extraneous-dependencies */
 import '@endo/init';
 import { makeNodeBundleCache } from '@endo/bundle-source/cache.js';
+
+const trace = (...msgs) => console.log('[rollup-plugin-core-eval]', ...msgs);
 
 export const coreEvalGlobals = {
   E: 'E',
@@ -40,16 +41,31 @@ export const configureOptions = ({ options }) => {
 };
 
 export const configureBundleID = ({ name, rootModule, cache }) => {
-  const pattern = new RegExp(`bundleID\\b = Fail.*`, 'g');
+  // const pattern = new RegExp(`^ *bundleID\\b = Fail.*`);
+  // const pattern = new RegExp(`Fail\``);
+  // const pattern = /Fail`no bundleID`/
+  const pattern = new RegExp(`bundleID\\b = Fail.*`);
   const bundleCacheP = makeNodeBundleCache(cache, {}, s => import(s));
   return {
     name: 'configureBundleID',
     transform: async (code, _id) => {
-      const bundle = await bundleCacheP.then(c => c.load(rootModule, name));
+      trace('transform', name, code, _id);
+      // passes in code
+      const bundle = await bundleCacheP.then(c =>
+        c.load(rootModule, name, trace, { elideComments: true }),
+      );
+      trace(bundle.endoZipBase64Sha512);
+      trace('rootModule: ', rootModule);
+      trace('name: ', name);
+      const test = JSON.stringify(`z${bundle.endoZipBase64Sha512}`);
+      trace(test);
       const revised = code.replace(
         pattern,
-        `bundleID = ${JSON.stringify(`b1-${bundle.endoZipBase64Sha512}`)},`,
+        `bundleID = ${JSON.stringify(`b1-${bundle.endoZipBase64Sha512}`)}`,
+        // test,
+        // () => `b1-${test}`
       );
+      trace('revised === code:', revised === code);
       if (revised === code) return null;
       return { code: revised };
     },

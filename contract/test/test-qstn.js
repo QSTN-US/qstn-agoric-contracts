@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { E } from '@endo/far';
 import { extractPowers } from '@agoric/vats/src/core/utils.js';
 
-import { mockBootstrapPowers } from './utilities/boot-tools.js';
+import { mockBootstrapPowers } from './utils/boot-tools.js';
 import {
   installQstnContract,
   permit,
@@ -20,7 +20,7 @@ import {
 import { getBuildOpts } from '../tools/qstn-builder.js';
 
 /**
- * @import {MockWallet} from './utilities/wallet-tools.js';
+ * @import {MockWallet} from './utils/wallet-tools.js';
  * @import {TestFn} from 'ava';
  */
 
