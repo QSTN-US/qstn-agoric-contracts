@@ -21,7 +21,7 @@ import { boardSlottingMarshaller } from '@agoric/vats/tools/board-utils.js';
 /** @import { Instance, InvitationDetails } from '@agoric/zoe'; */
 /** @import { SwingsetTestKit } from './support2.js'; */
 /** @import { ERef } from '@endo/far'; */
-/** @import { BankManager } from '@agoric/vats/src/core/types.js'; */
+/** @import { BankManager } from '@agoric/vats'; */
 
 // XXX SwingsetTestKit would simplify this
 /**

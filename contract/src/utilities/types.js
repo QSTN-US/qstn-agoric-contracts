@@ -6,7 +6,7 @@ import '@agoric/zoe/exported';
 import '@agoric/vats/src/types.js';
 
 /**
- * @import {axelarGmpMessageType} from '../utils/gmp';
+ * @import {axelarGmpMessageType} from '../utils/gmp.js';
  * @import {COSMOS_CHAINS, EVM_CHAINS, ActiveChainType} from './chains.js';
  * @import {ChainInfo} from "@agoric/orchestration/src/orchestration-api.js"
  * @import {AdminFacet} from '@agoric/zoe/src/zoeService/utils';

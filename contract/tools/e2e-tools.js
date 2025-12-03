@@ -20,7 +20,10 @@ import { getBundleId } from './bundle-tools.js';
 
 const nodeRequire = createRequire(import.meta.url);
 
-/** @import { Container, ExecSync } from './agd-lib.js'; */
+/**
+ *  @import {Container, ExecSync} from './agd-lib.js';
+ *
+ */
 
 const BLD = '000000ubld';
 
@@ -299,7 +302,7 @@ export const provisionSmartWallet = async (
     }
   }
 
-  /** @type {import('../test/wallet-tools.js').MockWallet['peek']} */
+  /** @type {import('../test/utils/wallet-tools.js').MockWallet['peek']} */
   const peek = Far('Peek', { purseUpdates });
 
   return { offers, deposit, peek, query: q };
@@ -479,7 +482,7 @@ export const makeE2ETools = (
 
   const installBundles = async (fullPaths, progress) => {
     await null;
-    /** @type {Record<string, import('../test/boot-tools.js').CachedBundle>} */
+    /** @type {Record<string, import('../test/utils/boot-tools.js').CachedBundle>} */
     const bundles = {};
     // for (const [name, rootModPath] of Object.entries(bundleRoots)) {
     console.log('fullPaths', fullPaths);
@@ -511,7 +514,7 @@ export const makeE2ETools = (
    */
   const installBundlesE2E = async (fullPaths, progress) => {
     await null;
-    /** @type {Record<string, import('../test/boot-tools.js').CachedBundle>} */
+    /** @type {Record<string, import('../test/utils/boot-tools.js').CachedBundle>} */
     const bundles = {};
     // for (const [name, rootModPath] of Object.entries(bundleRoots)) {
     console.log('fullPaths E2E', fullPaths);

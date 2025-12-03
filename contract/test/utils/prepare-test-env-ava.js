@@ -5,7 +5,7 @@
  */
 
 import '@endo/init/pre-bundle-source.js';
-import '@agoric/zoe/tools/prepare-test-env.js';
+import '@agoric/zoe/tools/prepare-test-env';
 // eslint-disable-next-line import/no-unresolved -- https://github.com/avajs/ava/issues/2951
 import rawTest from 'ava';
 import { wrapTest } from '@endo/ses-ava';

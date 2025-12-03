@@ -5,13 +5,13 @@
     "module": "esnext",
     "noEmit": true,
     "strictNullChecks": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "ignoreDeprecations": "6.0"
   },
   "include": [
     "src/**/*.js",
     "src/**/*.d.ts",
     "test/**/*.js",
-    "tools/config.js"
+    "tools/config.js",
   ]
 }

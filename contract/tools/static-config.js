@@ -1,5 +1,4 @@
 /**
- * @import {Brand} from '@agoric/ertp';
  * @import {Denom, CosmosChainInfo} from '@agoric/orchestration';
  */
 

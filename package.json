@@ -19,19 +19,22 @@
     "deploy",
     "solidity"
   ],
+  "resolutions-note": "needed until @agoric/orchestration is available using this",
   "resolutions": {
-    "aggregate-error": "3.0.0",
     "esm": "github:agoric-labs/esm.git#Agoric-built"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
   "devDependencies": {
     "concurrently": "^9.1.2",
     "patch-package": "^8.0.0",
-    "prettier": "^3.5.3"
+    "prettier": "^3.5.3",
+    "prettier-plugin-tailwindcss": "^0.5.11",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.1",
+    "typescript": "^5.5.2"
   },
   "prettier": {
     "trailingComma": "all",

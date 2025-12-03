@@ -12,7 +12,7 @@ import { sanitizePathSegment } from './start-contract.js';
  * @import {GovernableStartFn, GovernanceFacetKit} from '@agoric/governance/src/types.js';
  * @import {NameHub} from '@agoric/vats';
  * @import {TimerService} from '@agoric/time';
- * @import {Invitation, Installation, ZoeService, IssuerKeywordRecord} from '@agoric/zoe';
+ * * @import {Invitation, Installation, ZoeService, IssuerKeywordRecord} from '@agoric/zoe';
  */
 const { values } = Object;
 
@@ -85,6 +85,7 @@ export const startMyGovernedInstance = async (
   },
 ) => {
   console.log('Getting poser invitation...');
+  console.log('try fixing this');
 
   const poserInvitationP = E(committeeCreatorFacet).getPoserInvitation();
   const [initialPoserInvitation, electorateInvitationAmount] =
@@ -92,6 +93,8 @@ export const startMyGovernedInstance = async (
       poserInvitationP,
       E(E(zoe).getInvitationIssuer()).getAmountOf(poserInvitationP),
     ]);
+
+  console.log('try fixing this2');
 
   const fullGovernorTerms = await allValues({
     timer,
@@ -112,24 +115,41 @@ export const startMyGovernedInstance = async (
     },
     ...governorTerms,
   });
-  const governorFacets = await E(zoe).startInstance(
-    contractGovernor,
-    {},
-    fullGovernorTerms,
-    harden({
-      governed: await allValues({
-        ...privateArgs,
-        initialPoserInvitation,
+
+  console.log('try fixing this3');
+
+  let governorFacets;
+
+  console.log(fullGovernorTerms);
+  // console.log(contractGovernor);
+
+  try {
+    governorFacets = await E(zoe).startInstance(
+      contractGovernor,
+      {},
+      fullGovernorTerms,
+      harden({
+        governed: await allValues({
+          ...privateArgs,
+          initialPoserInvitation,
+          issuerKeywordRecord,
+        }),
       }),
-    }),
-    `${label}-governor`,
-  );
+      `${label}-governor`,
+    );
+  } catch (e) {
+    console.log(e);
+  }
+
+  console.log('try fixing this4');
+
   const [instance, publicFacet, creatorFacet, adminFacet] = await Promise.all([
     E(governorFacets.creatorFacet).getInstance(),
     E(governorFacets.creatorFacet).getPublicFacet(),
     E(governorFacets.creatorFacet).getCreatorFacet(),
     E(governorFacets.creatorFacet).getAdminFacet(),
   ]);
+
   /** @type {GovernanceFacetKit<SF>} */
   const facets = harden({
     instance,
@@ -140,6 +160,8 @@ export const startMyGovernedInstance = async (
     governorCreatorFacet: governorFacets.creatorFacet,
     governorAdminFacet: governorFacets.adminFacet,
   });
+
+  console.log('try fixing this5');
   return facets;
 };
 
@@ -188,6 +210,9 @@ export const startMyCharter = async (contractName, powers, config) => {
   } = config?.options || {};
   assert(voterAddresses, 'no voter addresses???');
 
+  console.log(voterAddresses);
+  console.log('here');
+
   const [charterInstall, counterInstall] = await Promise.all([
     installP,
     counterP,
@@ -199,6 +224,7 @@ export const startMyCharter = async (contractName, powers, config) => {
   const startResult = await E(zoe).startInstance(
     charterInstall,
     undefined,
+    // @ts-expect-error ignore
     terms,
     undefined,
     'econCommitteeCharter',

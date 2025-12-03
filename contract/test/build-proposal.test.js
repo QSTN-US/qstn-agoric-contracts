@@ -47,7 +47,7 @@ test.before(async t => {
 
   const listBundles = async (bundleDir = 'bundles') => {
     const candidates = await fs.readdir(bundleDir);
-    const matches = candidates.filter(n => /^bundle-.*\.js$/.test(n));
+    const matches = candidates.filter(n => /^bundle-.*qstn.*\.js$/.test(n));
     console.log('listBundles', { candidates, matches });
     return matches.map(base => {
       const name = base.replace(/^bundle-/, '').replace(/\.js$/, '');

@@ -9,9 +9,9 @@ import {
 import { allValues } from '../utilities/objectTools.js';
 
 /**
- * @import { BootstrapManifestPermit } from "@agoric/vats/src/core/lib-boot.js";
- * @import {Issuer} from '@agoric/ertp';
- * @import {CosmosChainInfo, Denom, DenomDetail} from '@agoric/orchestration';
+ * * @import {BootstrapManifestPermit} from "@agoric/vats/src/core/lib-boot.js";
+ * * @import {Issuer} from '@agoric/ertp';
+ * * @import {CosmosChainInfo, Denom, DenomDetail} from '@agoric/orchestration';
  */
 
 const { Fail } = assert;
@@ -136,12 +136,12 @@ export const startQstnContract = async (powers, config) => {
 
   const it = await startMyGovernedInstance(
     {
-      label: contractName,
       zoe,
       governedContractInstallation: installationP,
-      issuerKeywordRecord,
+      label: contractName,
       privateArgs,
       terms: {},
+      issuerKeywordRecord,
     },
     {
       governedParams: {},
@@ -181,8 +181,8 @@ export const main = (
   allValues({
     installation: installQstnContract(permittedPowers, config),
     committeeFacets: startQstnCommittee(permittedPowers, config),
-    contractFacets: startQstnContract(permittedPowers, config),
     charterFacets: startQstnCharter(permittedPowers, config),
+    contractFacets: startQstnContract(permittedPowers, config),
   });
 
 /** @type {BootstrapManifestPermit} */
@@ -224,7 +224,7 @@ export const permit = harden({
       [`${contractName}Committee`]: true,
     },
   },
-  brand: {
+  issuer: {
     consume: {
       IST: true,
       BLD: true,

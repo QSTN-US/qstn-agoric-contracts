@@ -6,7 +6,7 @@ import { E, Far } from '@endo/far';
  * @import {ERef} from '@endo/far';
  * @import {StorageNode,Marshaller} from '@agoric/internal/src/lib-chainStorage.js';
  * @import {Zone} from '@agoric/zone';
- * @import {Brand} from '@agoric/ertp/src/types.js';
+ * @import {Brand} from '@agoric/ertp/src/types';
  * @import {Board} from '@agoric/vats';
  */
 

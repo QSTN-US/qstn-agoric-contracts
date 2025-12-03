@@ -8,9 +8,9 @@ import { E } from '@endo/far';
 import { createRequire } from 'module';
 
 /**
- * @import {ERef} from '@endo/far';
- * @import {Brand, Issuer, Payment} from '@agoric/ertp/src/types.js';
- * @import {Installation, FeeMintAccess, ZoeService} from '@agoric/zoe';
+ * * @import {ERef} from '@endo/far';
+ * * @import {Payment} from '@agoric/ertp/src/types.js';
+ * * @import {Installation, FeeMintAccess, ZoeService} from '@agoric/zoe';
  */
 
 const myRequire = createRequire(import.meta.url);
@@ -79,6 +79,5 @@ export const makeStableFaucet = ({
     return purse;
   };
 
-  // @ts-expect-error harden
   return harden({ mintBrandedPayment, faucet });
 };

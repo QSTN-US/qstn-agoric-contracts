@@ -14,13 +14,13 @@ import '@agoric/zoe/src/zoeService/types-ambient.js';
 import { allValues, mapValues } from '../../src/utilities/objectTools.js';
 
 /**
- * @import {Amount, Brand, Issuer, Payment, Purse} from '@agoric/ertp/src/types.js';
- * @import {ERef} from '@endo/far';
- * @import {OfferSpec} from '@agoric/smart-wallet/src/offers.js';
- * @import {UpdateRecord} from '@agoric/smart-wallet/src/smartWallet.js';
- * @import {InvitationSpec} from '@agoric/smart-wallet/src/invitations.js';
- * @import {PromiseKit} from '@endo/promise-kit';
- * @import {AmountKeywordRecord, ZoeService, IssuerKeywordRecord} from '@agoric/zoe';
+ * * @import {Amount, Brand, Issuer, Payment, Purse} from '@agoric/ertp/src/types.js';
+ * * @import {ERef} from '@endo/far';
+ * * @import {OfferSpec} from '@agoric/smart-wallet/src/offers.js';
+ * * @import {UpdateRecord} from '@agoric/smart-wallet/src/smartWallet.js';
+ * * @import {InvitationSpec} from '@agoric/smart-wallet/src/invitations.js';
+ * * @import {PromiseKit} from '@endo/promise-kit';
+ * * @import {AmountKeywordRecord, ZoeService, IssuerKeywordRecord} from '@agoric/zoe';
  */
 
 const { values } = Object;
@@ -51,17 +51,17 @@ export const mockWalletFactory = (
       values(issuerKeywordRecord).map(async issuer => {
         const purse = await E(issuer).makeEmptyPurse();
         const brand = await E(issuer).getBrand();
-        //         /** @type {[Brand, Purse]} */
-        /** @type {[Brand<any>, Purse<any, any>]} */
-        // @ts-expect-error invalid type
+        /** @type {[Brand<any>, Purse<any, import('@endo/patterns').Key>]} */
         const entry = [brand, purse];
         return entry;
       }),
     );
     const purseByBrand = new Map(entries);
     const invitationBrand = await E(E(zoe).getInvitationIssuer()).getBrand();
+    // @ts-expect-error ignore
     purseByBrand.has(invitationBrand) ||
       Fail`no invitation issuer / purse / brand`;
+    // @ts-expect-error ignore
     const invitationPurse = purseByBrand.get(invitationBrand);
     assert(invitationPurse);
 
@@ -105,6 +105,7 @@ export const mockWalletFactory = (
           invitationAmount,
         )}`;
       return E(invitationPurse).withdraw(
+        // @ts-expect-error ignore
         harden({ brand: invitationAmount.brand, value: [detail] }),
       );
     };

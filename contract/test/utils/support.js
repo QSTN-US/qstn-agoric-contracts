@@ -1,10 +1,10 @@
 import { promisify } from 'node:util';
-import { makeRetryUntilCondition } from '../tools/sleep.js';
-import { makeDeployBuilder } from '../tools/deploy.js';
+import { makeRetryUntilCondition } from '../../tools/sleep.js';
+import { makeDeployBuilder } from '../../tools/deploy.js';
 import { makeE2ETools } from '../../tools/e2e-tools.js';
 
 /**
- * @import {Agd} from '../tools/agd-lib.js';
+ * @import {Agd} from '../../tools/agd-lib.js';
  */
 const { entries, fromEntries } = Object;
 

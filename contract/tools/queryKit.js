@@ -117,7 +117,7 @@ export const makeQueryKit = (
   const queryData = async path => {
     const [[_p, answer]] = await batchQuery([['data', path]]);
     if (typeof answer === 'string') return answer;
-    if (answer.error) throw Error(answer.error);
+    if ('error' in answer) throw Error(answer.error);
     return answer.value;
   };
 
@@ -125,7 +125,7 @@ export const makeQueryKit = (
   const queryChildren = async path => {
     const [[_p, answer]] = await batchQuery([['children', path]]);
     if (typeof answer === 'string') return answer;
-    if (answer.error) throw Error(answer.error);
+    if ('error' in answer) throw Error(answer.error);
     return answer.value;
   };
 

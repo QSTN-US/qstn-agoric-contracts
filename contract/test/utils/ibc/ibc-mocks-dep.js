@@ -16,7 +16,7 @@ import { LOCALCHAIN_DEFAULT_ADDRESS } from '@agoric/vats/tools/fake-bridge.js';
 import {
   makeQueryPacket,
   makeTxPacket,
-} from '@agoric/orchestration/src/utils/packet.js';
+} from '@agoric/orchestration/src/utils/packet';
 // import { ChainAddress } from '@agoric/orchestration/src/orchestration-api.js';
 
 // interface EncoderI<T> {
