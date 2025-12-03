@@ -1,28 +1,23 @@
 /**
- * @file Implements the orchestration flow which does the following:
+ * @file Implements the orchestration flow for qstn
  *
- *   - Sets up and monitors the QSTN Chain Account (LCA).
- *   - Coordinates IBC-related logic through `createAndMonitorLCA()`.
- *
- *   For more details, see: docs/axelar-gmp/create-and-use-wallet.mmd in
- *   orchestration package.
  */
 
 import { makeTracer, NonNullish } from '@agoric/internal';
 import { Fail, makeError, q } from '@endo/errors';
-import { COSMOS_CHAINS } from '../utils/chains.js';
-import { gmpAddresses } from '../utils/gmp.js';
+import { COSMOS_CHAINS } from './utilities/chains.js';
+import { gmpAddresses } from './utilities/gmp.js';
 
 /**
- * @import {GuestInterface, GuestOf} from '@agoric/async-flow';
- * @import {Orchestrator, OrchestrationFlow} from '@agoric/orchestration';
- * @import {ChainHub} from '@agoric/orchestration/src/exos/chain-hub.js';
- * @import {Vow} from '@agoric/vow';
- * @import {ZCFSeat} from '@agoric/zoe/src/zoeService/zoe.js';
- * @import {ZoeTools} from '@agoric/orchestration/src/utils/zoe-tools.js';
- * @import {axelarGmpOutgoingMemo} from '../types.js';
- * @import {CrossChainContractMessage} from "../utils/types.js";
- * @import {Bech32Address} from '@agoric/orchestration';
+ * * @import {GuestInterface, GuestOf} from '@agoric/async-flow';
+ * * @import {Orchestrator, OrchestrationFlow} from '@agoric/orchestration';
+ * * @import {ChainHub} from '@agoric/orchestration/src/exos/chain-hub.js';
+ * * @import {Vow} from '@agoric/vow';
+ * * @import {ZCFSeat} from '@agoric/zoe/src/zoeService/zoe.js';
+ * * @import {ZoeTools} from '@agoric/orchestration/src/utils/zoe-tools.js';
+ * * @import {axelarGmpOutgoingMemo} from '../types.js';
+ * * @import {CrossChainContractMessage} from "./utilities/types.js";
+ * * @import {Bech32Address} from '@agoric/orchestration';
  */
 
 const trace = makeTracer('SendTransaction');

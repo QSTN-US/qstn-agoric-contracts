@@ -11,8 +11,10 @@ import { E } from '@endo/far';
  * @import {Issuer} from '@agoric/ertp';
  * @import {Installation, Instance} from '@agoric/zoe/src/zoeService/utils.js';
  * @import {CosmosChainInfo, Denom, DenomDetail} from '@agoric/orchestration';
- * @import {start as StartFn} from 'contract/src/qstn.router.js';
+ * @import {start as StartFn} from 'contract/src/qstn.contract.js';
  */
+
+const contractName = 'QstnRouter';
 
 const trace = makeTracer('start qstn contract', true);
 
@@ -20,12 +22,12 @@ const trace = makeTracer('start qstn contract', true);
  * @param {BootstrapPowers & {
  *   installation: {
  *     consume: {
- *       qstnRouterV1: Installation<StartFn>;
+ *       qstnRouter: Installation<StartFn>;
  *     };
  *   };
  *   instance: {
  *     produce: {
- *       qstnRouterV1: Producer<Instance<StartFn>>
+ *       qstnRouter: Producer<Instance<StartFn>>
  *     };
  *   };
  *   issuer: {
@@ -54,10 +56,10 @@ export const startQstnRouter = async (
       startUpgradable,
     },
     installation: {
-      consume: { qstnRouterV1 },
+      consume: { qstnRouter },
     },
     instance: {
-      produce: { qstnRouterV1: produceInstance },
+      produce: { qstnRouter: produceInstance },
     },
     issuer: {
       consume: { BLD, IST },

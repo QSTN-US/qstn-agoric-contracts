@@ -1,7 +1,10 @@
+import '@agoric/ertp/exported';
+import '@agoric/zoe/exported';
+
 import '@agoric/vats/src/types.js';
 
 /**
- * @import {axelarGmpMessageType} from '../utils/gmp';
+ * @import {axelarGmpMessageType} from './gmp.js';
  * @import {COSMOS_CHAINS, EVM_CHAINS, ActiveChainType} from './chains.js';
  * @import {ChainInfo} from "@agoric/orchestration/src/orchestration-api.js"
  */
@@ -42,6 +45,15 @@ import '@agoric/vats/src/types.js';
  *   channelId: string;
  *   remoteDenom: string;
  * }} RemoteChannelInfo
+ */
+
+/**
+ *
+ * @typedef {PromiseSpaceOf<{
+ *   qstnCommitteeCreatorFacet: import('@agoric/governance/src/committee.js').CommitteeElectorateCreatorFacet
+ * }>
+ * } QstnBootstrapSpace
+ *
  */
 
 export {};
