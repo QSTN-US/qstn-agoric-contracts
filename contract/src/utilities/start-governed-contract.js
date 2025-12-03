@@ -224,7 +224,6 @@ export const startMyCharter = async (contractName, powers, config) => {
   const startResult = await E(zoe).startInstance(
     charterInstall,
     undefined,
-    // @ts-expect-error ignore
     terms,
     undefined,
     'econCommitteeCharter',

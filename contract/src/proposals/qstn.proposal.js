@@ -185,6 +185,96 @@ export const main = (
     contractFacets: startQstnContract(permittedPowers, config),
   });
 
+/** @type {import('@agoric/vats/src/core/lib-boot.js').BootstrapManifest} */
+const qstnManifest = {
+  [installQstnContract.name]: {
+    installation: {
+      produce: { [contractName]: true },
+    },
+  },
+  [startQstnCharter.name]: {
+    consume: {
+      board: true,
+      chainStorage: true,
+      startUpgradable: true,
+    },
+    installation: {
+      consume: { econCommitteeCharter: true },
+    },
+    instance: {
+      produce: { [`${contractName}Charter`]: true },
+    },
+    produce: {
+      [`${contractName}CharterKit`]: true,
+    },
+  },
+  [startQstnCommittee.name]: {
+    consume: {
+      board: true,
+      chainStorage: true,
+      startUpgradable: true,
+      namesByAddress: true,
+    },
+    installation: {
+      consume: {
+        committee: true,
+        binaryVoteCounter: true,
+      },
+    },
+    instance: {
+      produce: { [`${contractName}Committee`]: true },
+    },
+    produce: {
+      [`${contractName}CommitteeKit`]: true,
+    },
+  },
+  [startQstnContract.name]: {
+    consume: {
+      agoricNames: true,
+      board: true,
+      chainStorage: true,
+      chainTimerService: true,
+      cosmosInterchainService: true,
+      namesByAddressAdmin: true,
+      zoe: true,
+      localchain: true,
+      [`${contractName}CommitteeKit`]: true,
+      [`${contractName}CharterKit`]: true,
+    },
+    produce: {
+      [`${contractName}Kit`]: true,
+    },
+    installation: {
+      consume: {
+        [contractName]: true,
+        contractGovernor: true,
+      },
+    },
+    instance: {
+      produce: { [contractName]: true },
+    },
+    issuer: {
+      consume: {
+        BLD: true,
+        IST: true,
+      },
+    },
+  },
+};
+harden(qstnManifest);
+
+export const getManifest = ({ restoreRef }, { installKeys, ...options }) => {
+  return harden({
+    manifest: qstnManifest,
+    installations: {
+      [contractName]: restoreRef(installKeys[contractName]),
+    },
+    options: {
+      [contractName]: options,
+    },
+  });
+};
+
 /** @type {BootstrapManifestPermit} */
 export const permit = harden({
   consume: {

@@ -58,10 +58,8 @@ export const mockWalletFactory = (
     );
     const purseByBrand = new Map(entries);
     const invitationBrand = await E(E(zoe).getInvitationIssuer()).getBrand();
-    // @ts-expect-error ignore
     purseByBrand.has(invitationBrand) ||
       Fail`no invitation issuer / purse / brand`;
-    // @ts-expect-error ignore
     const invitationPurse = purseByBrand.get(invitationBrand);
     assert(invitationPurse);
 
@@ -105,7 +103,6 @@ export const mockWalletFactory = (
           invitationAmount,
         )}`;
       return E(invitationPurse).withdraw(
-        // @ts-expect-error ignore
         harden({ brand: invitationAmount.brand, value: [detail] }),
       );
     };

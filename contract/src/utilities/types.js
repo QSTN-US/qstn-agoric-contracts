@@ -1,15 +1,12 @@
-import '@agoric/governance/src/types-ambient';
-import '@agoric/vats/src/core/types';
 import '@agoric/ertp/exported';
 import '@agoric/zoe/exported';
 
 import '@agoric/vats/src/types.js';
 
 /**
- * @import {axelarGmpMessageType} from '../utils/gmp.js';
+ * @import {axelarGmpMessageType} from './gmp.js';
  * @import {COSMOS_CHAINS, EVM_CHAINS, ActiveChainType} from './chains.js';
  * @import {ChainInfo} from "@agoric/orchestration/src/orchestration-api.js"
- * @import {AdminFacet} from '@agoric/zoe/src/zoeService/utils';
  */
 
 /**
@@ -57,13 +54,6 @@ import '@agoric/vats/src/types.js';
  * }>
  * } QstnBootstrapSpace
  *
- * @typedef {object} QSTNKit
- * @property {string} label
- * @property {Instance} qstn
- * @property {Instance} qstnGovernor
- * @property {Awaited<ReturnType<Awaited<ReturnType<import('../src/archive/qstn.router.governance.js')['start']>>['creatorFacet']['getLimitedCreatorFacet']>>} psmCreatorFacet
- * @property {GovernorCreatorFacet<import('../src/archive/qstn.router.governance.js')['start']>} qstnGovernorCreatorFacet
- * @property {AdminFacet} qstnAdminFacet
  */
 
 export {};
