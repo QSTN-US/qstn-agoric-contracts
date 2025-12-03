@@ -24,6 +24,8 @@
   },
   "include": [
     "tools",
-    "src"
+    "src",
+    "test",
+    "../.qodo/axelar-gmp.test.ts"
   ]
 }

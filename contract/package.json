@@ -10,9 +10,8 @@
     "docker:make": "docker compose exec agd make -C /workspace/contract",
     "make:help": "make list",
     "start": "make clean start-contract",
-    "build": "yarn build:deployer",
+    "build": "yarn build:contracts",
     "build:contracts": "esbuild src/qstn.contract.js --platform=node --format=esm --bundle --outfile=dist/qstn.contract.bundle.js",
-    "build:deployer": "rollup -c rollup.config.mjs",
     "test": "ava --verbose",
     "lint": "tsc && eslint '**/*.js'",
     "lint:fix": "eslint --fix '**/*.js'"
@@ -72,6 +71,7 @@
   },
   "dependencies": {
     "@agoric/cosmic-swingset": "^0.42.0-u21.0",
+    "@agoric/deploy-script-support": "^0.10.4-u17.1",
     "@agoric/ertp": "0.17.0-u22.2",
     "@agoric/governance": "^0.11.0-u21.0",
     "@agoric/internal": "0.4.0-u22.2",

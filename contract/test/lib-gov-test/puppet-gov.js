@@ -1,11 +1,12 @@
 // @ts-check
 // borrowed from https://github.com/Agoric/agoric-sdk/blob/master/packages/inter-protocol/test/supports.js
+/// <reference types="@agoric/vats/src/core/types-ambient.js"/>
 import { E, Far } from '@endo/far';
 import { createRequire } from 'node:module';
 
 /**
  * @import {ERef} from '@endo/far';
- * @import { makeNodeBundleCache } from '@endo/bundle-source/cache.js';
+ * @import {makeNodeBundleCache} from '@endo/bundle-source/cache.js';
  * @import {ZoeService} from '@agoric/zoe';
  */
 const nodeRequire = createRequire(import.meta.url);
