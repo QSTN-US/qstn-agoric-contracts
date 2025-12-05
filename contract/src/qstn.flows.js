@@ -80,12 +80,14 @@ export const sendTransaction = async (
   // Create local account for transactions
   const localAccount = await agoric.makeAccount();
 
+  const agoricChainId = (await agoric.getChainInfo()).chainId;
+
   // Validate ALL messages in parallel and store results
   trace('Validating all messages in parallel...');
 
   const validatedMessages = await Promise.all(
     messages.map((msg, index) =>
-      validateMessage(msg, orch, chainHub, agoric).then(result => ({
+      validateMessage(msg, orch, chainHub, agoricChainId).then(result => ({
         ...result,
         message: msg,
         index,

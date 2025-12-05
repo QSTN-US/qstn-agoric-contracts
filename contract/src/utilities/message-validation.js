@@ -22,10 +22,15 @@ import { CosmosPayloadShape } from './type-guards.js';
  * @param {CrossChainContractMessage} message
  * @param {Orchestrator} orch
  * @param {GuestInterface<ChainHub>} chainHub
- * @param {any} agoric
+ * @param {string} agoricChainId
  * @returns {Promise<{remoteChainId: string, memo: any, destinationAddress: string}>}
  */
-export const validateMessage = async (message, orch, chainHub, agoric) => {
+export const validateMessage = async (
+  message,
+  orch,
+  chainHub,
+  agoricChainId,
+) => {
   const { destinationChain, destinationAddress, type, chainType, payload } =
     message;
 
@@ -43,7 +48,6 @@ export const validateMessage = async (message, orch, chainHub, agoric) => {
   remoteDenom || Fail`${remoteChainId} does not have stakingTokens in config`;
 
   // Get Agoric chain ID and connection info
-  const agoricChainId = (await agoric.getChainInfo()).chainId;
   const { transferChannel } = await chainHub.getConnectionInfo(
     agoricChainId,
     remoteChainId,
