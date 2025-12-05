@@ -84,92 +84,93 @@ export const sendTransaction = async (
   // Transfer funds to local account
   await localTransfer(seat, localAccount, give);
 
+  /**
+   * Helper function to recover if any error occurs
+   *
+   * @param {Error} e
+   */
+  const recoverFailedTransfer = async e => {
+    await withdrawToSeat(localAccount, seat, give);
+    const errorMsg = `Transaction failed ${q(e)}`;
+    trace(`ERROR: ${errorMsg}`);
+    seat.fail(errorMsg);
+    throw makeError(errorMsg);
+  };
+
   // Process each message
   for (const message of messages) {
-    // Validate message parameters
-    message.destinationChain != null ||
-      Fail`Destination chain must be defined for message ${message}`;
+    try {
+      // Validate message parameters
+      message.destinationChain != null ||
+        Fail`Destination chain must be defined for message ${message}`;
 
-    message.destinationAddress != null ||
-      Fail`Destination address must be defined for message ${message}`;
+      message.destinationAddress != null ||
+        Fail`Destination address must be defined for message ${message}`;
 
-    const { destinationChain, destinationAddress, type, chainType, payload } =
-      message;
+      const { destinationChain, destinationAddress, type, chainType, payload } =
+        message;
 
-    // Determine connection chain
-    const chain =
-      chainType === 'evm'
-        ? COSMOS_CHAINS.Axelar
-        : COSMOS_CHAINS[destinationChain];
+      // Determine connection chain
+      const chain =
+        chainType === 'evm'
+          ? COSMOS_CHAINS.Axelar
+          : COSMOS_CHAINS[destinationChain];
 
-    const remoteChain = await orch.getChain(chain);
+      const remoteChain = await orch.getChain(chain);
 
-    trace('Connection Chain', chain);
+      trace('Connection Chain', chain);
 
-    // Get remote chain information
-    const { chainId: remoteChainId, stakingTokens } =
-      await remoteChain.getChainInfo();
+      // Get remote chain information
+      const { chainId: remoteChainId, stakingTokens } =
+        await remoteChain.getChainInfo();
 
-    const remoteDenom = stakingTokens[0].denom;
-    remoteDenom || Fail`${remoteChainId} does not have stakingTokens in config`;
+      const remoteDenom = stakingTokens[0].denom;
+      remoteDenom ||
+        Fail`${remoteChainId} does not have stakingTokens in config`;
 
-    trace(
-      `Creating remote channel to ${destinationChain} (${chain}) with denom ${remoteDenom}`,
-    );
+      trace(
+        `Creating remote channel to ${destinationChain} (${chain}) with denom ${remoteDenom}`,
+      );
 
-    // Get Agoric chain ID and connection info
-    const agoricChainId = (await agoric.getChainInfo()).chainId;
+      // Get Agoric chain ID and connection info
+      const agoricChainId = (await agoric.getChainInfo()).chainId;
 
-    const { transferChannel } = await chainHub.getConnectionInfo(
-      agoricChainId,
-      remoteChainId,
-    );
+      const { transferChannel } = await chainHub.getConnectionInfo(
+        agoricChainId,
+        remoteChainId,
+      );
 
-    assert(
-      transferChannel.counterPartyChannelId,
-      'unable to find sourceChannel',
-    );
+      assert(
+        transferChannel.counterPartyChannelId,
+        'unable to find sourceChannel',
+      );
 
-    trace(`targets: [${destinationAddress}]`);
+      trace(`targets: [${destinationAddress}]`);
 
-    /**
-     * Helper function to recover if IBC Transfer fails
-     *
-     * @param {Error} e
-     */
-    const recoverFailedTransfer = async e => {
-      await withdrawToSeat(localAccount, seat, give);
-      const errorMsg = `IBC Transfer failed ${q(e)}`;
-      trace(`ERROR: ${errorMsg}`);
-      seat.fail(errorMsg);
-      throw makeError(errorMsg);
-    };
-
-    if (chainType === 'evm') {
-      // Handle EVM chain transfer
-      /** @type {axelarGmpOutgoingMemo} */
-      const memo = {
-        destination_chain: destinationChain,
-        destination_address: destinationAddress,
-        payload: Array.from(payload),
-        type,
-      };
-
-      // Add fee information for certain transaction types
-      if (type === 1 || type === 2) {
-        memo.fee = {
-          amount: String(message.amountFee),
-          recipient: gmpAddresses.AXELAR_GAS,
+      if (chainType === 'evm') {
+        // Handle EVM chain transfer
+        /** @type {axelarGmpOutgoingMemo} */
+        const memo = {
+          destination_chain: destinationChain,
+          destination_address: destinationAddress,
+          payload: Array.from(payload),
+          type,
         };
-        trace(`Fee object ${JSON.stringify(memo.fee)}`);
-        trace(`Fee object ${JSON.stringify(memo.fee)}`);
-      }
 
-      trace(`Initiating GMP Transaction...`);
-      trace(`DENOM of token:${denom}`);
+        // Add fee information for certain transaction types
+        if (type === 1 || type === 2) {
+          memo.fee = {
+            amount: String(message.amountFee),
+            recipient: gmpAddresses.AXELAR_GAS,
+          };
+          trace(`Fee object ${JSON.stringify(memo.fee)}`);
+          trace(`Fee object ${JSON.stringify(memo.fee)}`);
+        }
 
-      // Execute EVM transfer
-      try {
+        trace(`Initiating GMP Transaction...`);
+        trace(`DENOM of token:${denom}`);
+
+        // Execute EVM transfer
         await localAccount.transfer(
           {
             value: gmpAddresses.AXELAR_GMP,
@@ -186,85 +187,83 @@ export const sendTransaction = async (
         seat.exit();
 
         trace(`GMP Transaction sent successfully`);
-      } catch (e) {
-        return recoverFailedTransfer(e);
-      }
-    } else if (chainType === 'cosmos') {
-      // Handle Cosmos chain transfer
+      } else if (chainType === 'cosmos') {
+        // Handle Cosmos chain transfer
 
-      // Validate payload structure
-      let parsedPayload;
-      try {
-        parsedPayload = JSON.parse(payload);
-      } catch (e) {
-        throw makeError(`Invalid payload: must be valid JSON string. ${q(e)}`);
-      }
+        // Validate payload structure
+        let parsedPayload;
+        try {
+          parsedPayload = JSON.parse(payload);
+        } catch (e) {
+          throw makeError(
+            `Invalid payload: must be valid JSON string. ${q(e)}`,
+          );
+        }
 
-      // Validate required fields in payload
-      parsedPayload.wasm != null || Fail`Payload must contain 'wasm' field`;
-      parsedPayload.wasm.contract != null ||
-        Fail`Payload wasm must contain 'contract' field`;
-      parsedPayload.wasm.msg != null ||
-        Fail`Payload wasm must contain 'msg' field`;
+        // Validate required fields in payload
+        parsedPayload.wasm != null || Fail`Payload must contain 'wasm' field`;
+        parsedPayload.wasm.contract != null ||
+          Fail`Payload wasm must contain 'contract' field`;
+        parsedPayload.wasm.msg != null ||
+          Fail`Payload wasm must contain 'msg' field`;
 
-      // Validate message type and all required fields
-      const msg = parsedPayload.wasm.msg;
+        // Validate message type and all required fields
+        const msg = parsedPayload.wasm.msg;
 
-      let msgData;
-      /** @type {string[]} */
-      let requiredFields = [];
+        let msgData;
+        /** @type {string[]} */
+        let requiredFields = [];
 
-      if (msg.create_survey) {
-        msgData = msg.create_survey;
-        requiredFields = [
-          'signature',
-          'token',
-          'time_to_expire',
-          'owner',
-          'survey_id',
-          'participants_limit',
-          'reward_denom',
-          'reward_amount',
-          'survey_hash',
-          'manager_pub_key',
-        ];
-      } else if (msg.cancel_survey) {
-        msgData = msg.cancel_survey;
-        requiredFields = [
-          'signature',
-          'token',
-          'time_to_expire',
-          'survey_id',
-          'manager_pub_key',
-        ];
-      } else if (msg.pay_rewards) {
-        msgData = msg.pay_rewards;
-        requiredFields = [
-          'signature',
-          'token',
-          'time_to_expire',
-          'survey_ids',
-          'participants',
-          'manager_pub_key',
-        ];
-      } else {
-        Fail`Payload wasm.msg must contain one of: create_survey, cancel_survey, or pay_rewards`;
-      }
+        if (msg.create_survey) {
+          msgData = msg.create_survey;
+          requiredFields = [
+            'signature',
+            'token',
+            'time_to_expire',
+            'owner',
+            'survey_id',
+            'participants_limit',
+            'reward_denom',
+            'reward_amount',
+            'survey_hash',
+            'manager_pub_key',
+          ];
+        } else if (msg.cancel_survey) {
+          msgData = msg.cancel_survey;
+          requiredFields = [
+            'signature',
+            'token',
+            'time_to_expire',
+            'survey_id',
+            'manager_pub_key',
+          ];
+        } else if (msg.pay_rewards) {
+          msgData = msg.pay_rewards;
+          requiredFields = [
+            'signature',
+            'token',
+            'time_to_expire',
+            'survey_ids',
+            'participants',
+            'manager_pub_key',
+          ];
+        } else {
+          Fail`Payload wasm.msg must contain one of: create_survey, cancel_survey, or pay_rewards`;
+        }
 
-      // Validate all required fields for the message type
-      for (const field of requiredFields) {
-        msgData[field] != null ||
-          Fail`Message must contain '${q(field)}' field`;
-      }
+        // Validate all required fields for the message type
+        for (const field of requiredFields) {
+          msgData[field] != null ||
+            Fail`Message must contain '${q(field)}' field`;
+        }
 
-      const memo = payload;
+        const memo = payload;
 
-      trace(`Initiating IBC Transfer...`);
+        trace(`Initiating IBC Transfer...`);
 
-      trace(`DENOM of token:${denom}`);
+        trace(`DENOM of token:${denom}`);
 
-      // Execute Cosmos transfer
-      try {
+        // Execute Cosmos transfer
         await localAccount.transfer(
           {
             value: /** @type {Bech32Address} */ (destinationAddress),
@@ -281,9 +280,9 @@ export const sendTransaction = async (
         seat.exit();
 
         trace(`IBC Message Transaction sent successfully`);
-      } catch (e) {
-        return recoverFailedTransfer(e);
       }
+    } catch (e) {
+      return recoverFailedTransfer(e);
     }
   }
 };
