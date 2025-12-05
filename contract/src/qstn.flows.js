@@ -29,7 +29,6 @@ const { entries } = Object;
  * @param {object} ctx
  * @param {GuestInterface<ChainHub>} ctx.chainHub
  * @param {GuestInterface<ZoeTools>} ctx.zoeTools
- * @param {GuestOf<(msg: string) => Vow<void>>} ctx.log
  * @param {ZCFSeat} seat
  * @param {{
  * messages: CrossChainContractMessage[],
@@ -37,11 +36,11 @@ const { entries } = Object;
  */
 export const sendTransaction = async (
   orch,
-  { chainHub, log, zoeTools: { localTransfer, withdrawToSeat } },
+  { chainHub, zoeTools: { localTransfer, withdrawToSeat } },
   seat,
   offerArgs,
 ) => {
-  void log('Inside sendTransaction flow');
+  trace('Inside sendTransaction flow');
 
   // Extract messages and gas amount from offer arguments
   const { messages } = offerArgs;
@@ -115,7 +114,7 @@ export const sendTransaction = async (
     const remoteDenom = stakingTokens[0].denom;
     remoteDenom || Fail`${remoteChainId} does not have stakingTokens in config`;
 
-    void log(
+    trace(
       `Creating remote channel to ${destinationChain} (${chain}) with denom ${remoteDenom}`,
     );
 
@@ -142,7 +141,7 @@ export const sendTransaction = async (
     const recoverFailedTransfer = async e => {
       await withdrawToSeat(localAccount, seat, give);
       const errorMsg = `IBC Transfer failed ${q(e)}`;
-      void log(`ERROR: ${errorMsg}`);
+      trace(`ERROR: ${errorMsg}`);
       seat.fail(errorMsg);
       throw makeError(errorMsg);
     };
@@ -163,12 +162,12 @@ export const sendTransaction = async (
           amount: String(message.amountFee),
           recipient: gmpAddresses.AXELAR_GAS,
         };
-        void log(`Fee object ${JSON.stringify(memo.fee)}`);
+        trace(`Fee object ${JSON.stringify(memo.fee)}`);
         trace(`Fee object ${JSON.stringify(memo.fee)}`);
       }
 
-      void log(`Initiating GMP Transaction...`);
-      void log(`DENOM of token:${denom}`);
+      trace(`Initiating GMP Transaction...`);
+      trace(`DENOM of token:${denom}`);
 
       // Execute EVM transfer
       try {
@@ -184,7 +183,7 @@ export const sendTransaction = async (
           },
           { memo: JSON.stringify(memo) },
         );
-        void log(`GMP Transaction sent successfully`);
+        trace(`GMP Transaction sent successfully`);
       } catch (e) {
         return recoverFailedTransfer(e);
       }
@@ -258,9 +257,9 @@ export const sendTransaction = async (
 
       const memo = payload;
 
-      void log(`Initiating IBC Transfer...`);
+      trace(`Initiating IBC Transfer...`);
 
-      void log(`DENOM of token:${denom}`);
+      trace(`DENOM of token:${denom}`);
 
       // Execute Cosmos transfer
       try {

@@ -1,5 +1,4 @@
 import { M } from '@endo/patterns';
-import { E } from '@endo/far';
 import { prepareChainHubAdmin } from '@agoric/orchestration/src/exos/chain-hub-admin.js';
 import { withOrchestration } from '@agoric/orchestration/src/utils/start-helper.js';
 import { registerChainsAndAssets } from '@agoric/orchestration/src/utils/chain-hub-helper.js';
@@ -7,7 +6,7 @@ import { handleParamGovernance } from '@agoric/governance/src/contractHelper.js'
 import { sendTransaction } from './qstn.flows.js';
 
 /**
- * @import {Remote, Vow} from '@agoric/vow';
+ * @import {Remote} from '@agoric/vow';
  * @import {Zone} from '@agoric/zone';
  * @import {OrchestrationPowers, OrchestrationTools} from '@agoric/orchestration/src/utils/start-helper.js';
  * @import {CosmosChainInfo, Denom, DenomDetail} from '@agoric/orchestration';
@@ -37,7 +36,7 @@ export const contract = async (
   zcf,
   privateArgs,
   zone,
-  { chainHub, orchestrate, vowTools, zoeTools, baggage },
+  { chainHub, orchestrate, zoeTools, baggage },
 ) => {
   const { makeDurableGovernorFacet } = await handleParamGovernance(
     zcf,
@@ -56,16 +55,10 @@ export const contract = async (
 
   const chainHubAdminFacet = prepareChainHubAdmin(zone, chainHub);
 
-  // UNTIL https://github.com/Agoric/agoric-sdk/issues/9066
-  const logNode = E(privateArgs.storageNode).makeChildNode('log');
-  /** @type {(msg: string) => Vow<void>} */
-  const log = msg => vowTools.watch(E(logNode).setValue(msg));
-
   const makeSendTransaction = orchestrate(
     'sendTransaction',
     {
       chainHub,
-      log,
       zoeTools,
     },
     sendTransaction,
