@@ -1,3 +1,8 @@
+/**
+ * @file Qstn Router contract
+ *
+ */
+
 import { M } from '@endo/patterns';
 import { prepareChainHubAdmin } from '@agoric/orchestration/src/exos/chain-hub-admin.js';
 import { withOrchestration } from '@agoric/orchestration/src/utils/start-helper.js';

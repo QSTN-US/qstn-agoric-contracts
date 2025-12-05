@@ -4,9 +4,11 @@
  */
 
 import { makeTracer, NonNullish } from '@agoric/internal';
+import { mustMatch } from '@endo/patterns';
 import { Fail, makeError, q } from '@endo/errors';
 import { COSMOS_CHAINS } from './utilities/chains.js';
 import { gmpAddresses } from './utilities/gmp.js';
+import { OfferArgsShape, CosmosPayloadShape } from './type-guards.js';
 
 /**
  * @import {GuestInterface} from '@agoric/async-flow';
@@ -41,7 +43,8 @@ export const sendTransaction = async (
 ) => {
   trace('Inside sendTransaction flow');
 
-  // Extract messages and gas amount from offer arguments
+  mustMatch(offerArgs, OfferArgsShape);
+
   const { messages } = offerArgs;
 
   trace('Offer Args:', JSON.stringify(offerArgs));
@@ -100,13 +103,6 @@ export const sendTransaction = async (
   // Process each message
   for (const message of messages) {
     try {
-      // Validate message parameters
-      message.destinationChain != null ||
-        Fail`Destination chain must be defined for message ${message}`;
-
-      message.destinationAddress != null ||
-        Fail`Destination address must be defined for message ${message}`;
-
       const { destinationChain, destinationAddress, type, chainType, payload } =
         message;
 
@@ -190,8 +186,9 @@ export const sendTransaction = async (
       } else if (chainType === 'cosmos') {
         // Handle Cosmos chain transfer
 
-        // Validate payload structure
+        // Validate payload structure using pattern matching
         let parsedPayload;
+
         try {
           parsedPayload = JSON.parse(payload);
         } catch (e) {
@@ -200,62 +197,8 @@ export const sendTransaction = async (
           );
         }
 
-        // Validate required fields in payload
-        parsedPayload.wasm != null || Fail`Payload must contain 'wasm' field`;
-        parsedPayload.wasm.contract != null ||
-          Fail`Payload wasm must contain 'contract' field`;
-        parsedPayload.wasm.msg != null ||
-          Fail`Payload wasm must contain 'msg' field`;
-
-        // Validate message type and all required fields
-        const msg = parsedPayload.wasm.msg;
-
-        let msgData;
-        /** @type {string[]} */
-        let requiredFields = [];
-
-        if (msg.create_survey) {
-          msgData = msg.create_survey;
-          requiredFields = [
-            'signature',
-            'token',
-            'time_to_expire',
-            'owner',
-            'survey_id',
-            'participants_limit',
-            'reward_denom',
-            'reward_amount',
-            'survey_hash',
-            'manager_pub_key',
-          ];
-        } else if (msg.cancel_survey) {
-          msgData = msg.cancel_survey;
-          requiredFields = [
-            'signature',
-            'token',
-            'time_to_expire',
-            'survey_id',
-            'manager_pub_key',
-          ];
-        } else if (msg.pay_rewards) {
-          msgData = msg.pay_rewards;
-          requiredFields = [
-            'signature',
-            'token',
-            'time_to_expire',
-            'survey_ids',
-            'participants',
-            'manager_pub_key',
-          ];
-        } else {
-          Fail`Payload wasm.msg must contain one of: create_survey, cancel_survey, or pay_rewards`;
-        }
-
-        // Validate all required fields for the message type
-        for (const field of requiredFields) {
-          msgData[field] != null ||
-            Fail`Message must contain '${q(field)}' field`;
-        }
+        // Validate payload structure and all required fields with pattern matching
+        mustMatch(parsedPayload, CosmosPayloadShape);
 
         const memo = payload;
 
@@ -280,6 +223,9 @@ export const sendTransaction = async (
         seat.exit();
 
         trace(`IBC Message Transaction sent successfully`);
+      } else {
+        // This should never be reached due to pattern validation
+        throw Fail`Invalid chainType: ${q(chainType)}. Must be 'evm' or 'cosmos'`;
       }
     } catch (e) {
       return recoverFailedTransfer(e);
