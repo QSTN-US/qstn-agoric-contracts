@@ -1,9 +1,10 @@
+/* eslint-disable camelcase */
 import { IBCConnectionInfoShape } from '@agoric/orchestration/src/typeGuards.js';
 import { mustMatch } from '@endo/patterns';
 import { execFileSync } from 'node:child_process';
-import { makeAgd } from '../tools/agd-lib.js';
+import { makeAgd } from './agd-lib.js';
 import { networkConfigs } from './config.js';
-import { chainInfo } from './static-config.js';
+import { chainInfo, assetInfo } from './static-config.js';
 
 /**
  * @import {IBCChannelID, IBCConnectionID} from '@agoric/vats';
@@ -27,7 +28,7 @@ const parsePeers = strs => {
 /**
  * Get the IBC chain configuration based on the provided network and peer inputs.
  *
- * @param {Object} args - The arguments object.
+ * @param {object} args - The arguments object.
  * @param {string} args.net - The network name (e.g., 'emerynet').
  * @param {string[]} args.peer - The peers to connect .
  * @returns {Promise<Record<string, CosmosChainInfo>>} A promise that resolves to the chain configuration details keyed by chain name.
@@ -46,19 +47,30 @@ export const getChainConfig = async ({ net, peer }) => {
   const portId = 'transfer';
 
   const { chainId, rpc } = networkConfigs[net];
-  const agd = makeAgd({ execFileSync }).withOpts({ rpcAddrs: [rpc] });
+
+  console.log(
+    `Getting chain config for net=${net} chainId=${chainId} rpc=${rpc}`,
+  );
+
+  const agd = makeAgd({ execFileSync }).withOpts({
+    rpcAddrs: [rpc],
+  });
+
+  await null;
 
   for (const [peerName, myConn, myChan, denom] of parsePeers(peer)) {
-    console.debug(peerName, { denom });
     const connInfo = await agd
       .query(['ibc', 'connection', 'end', myConn])
       .then(x => x.connection);
+
     const { client_id } = connInfo;
+
     const clientState = await agd
       .query(['ibc', 'client', 'state', client_id])
       .then(x => x.client_state);
+
     const { chain_id: peerId } = clientState;
-    console.debug(peerName, { chainId: peerId, denom });
+
     chainDetails[peerName] = {
       namespace: 'cosmos',
       reference: peerId,
@@ -94,7 +106,7 @@ export const getChainConfig = async ({ net, peer }) => {
     connections[peerId] = info;
   }
 
-  chainDetails['agoric'] = {
+  chainDetails.agoric = {
     namespace: 'cosmos',
     reference: chainId,
     chainId,
@@ -104,4 +116,23 @@ export const getChainConfig = async ({ net, peer }) => {
   };
 
   return chainDetails;
+};
+
+export const getBuildOpts = async (net, peers) => {
+  const parseAssetInfo = () => {
+    if (typeof assetInfo !== 'string') return undefined;
+    return JSON.parse(assetInfo);
+  };
+
+  const chainDetails = await getChainConfig({
+    net,
+    peer: peers,
+  });
+
+  const opts = {
+    chainInfo: chainDetails,
+    assetInfo: parseAssetInfo(),
+  };
+
+  return opts;
 };

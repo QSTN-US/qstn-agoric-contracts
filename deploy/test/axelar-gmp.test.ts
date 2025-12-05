@@ -76,7 +76,7 @@ const makeTransaction = async ({
   return id;
 };
 
-test.before(async (t) => {
+test.before(async t => {
   t.context = await makeTestContext(t);
 
   const { evalProposal, buildProposal } = t.context;
@@ -120,11 +120,11 @@ test.before(async (t) => {
   );
 });
 
-test.beforeEach((t) => {
+test.beforeEach(t => {
   t.context.storage.data.delete('published.startQstnRouter.log');
 });
 
-test.serial('makeAccount via startQstnRouter', async (t) => {
+test.serial('makeAccount via startQstnRouter', async t => {
   const {
     storage,
     wallet,
@@ -181,7 +181,7 @@ test.serial('makeAccount via startQstnRouter', async (t) => {
   previousOffer = wallet.getCurrentWalletRecord().offerToUsedInvitation[0][0];
 });
 
-test.serial('get lca address', async (t) => {
+test.serial('get lca address', async t => {
   const { wallet } = t.context;
 
   await makeTransaction({
@@ -204,7 +204,7 @@ test.serial('get lca address', async (t) => {
   });
 });
 
-test.serial('receiveUpCall test', async (t) => {
+test.serial('receiveUpCall test', async t => {
   const {
     wallet,
     bridgeUtils: { runInbound },
@@ -269,7 +269,7 @@ test.serial('receiveUpCall test', async (t) => {
   });
 });
 
-test.serial('make offers using the lca', async (t) => {
+test.serial('make offers using the lca', async t => {
   const { wallet } = t.context;
 
   await makeTransaction({
@@ -296,7 +296,7 @@ test.serial('make offers using the lca', async (t) => {
   });
 });
 
-test.serial('token transfers using lca', async (t) => {
+test.serial('token transfers using lca', async t => {
   const { storage, wallet } = t.context;
   const { BLD } = t.context.agoricNamesRemotes.brand;
 
@@ -356,7 +356,7 @@ test.serial('token transfers using lca', async (t) => {
   );
 });
 
-test.serial('make contract calls using lca', async (t) => {
+test.serial('make contract calls using lca', async t => {
   const { wallet, storage } = t.context;
   const { BLD } = t.context.agoricNamesRemotes.brand;
 
