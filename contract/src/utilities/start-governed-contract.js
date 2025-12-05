@@ -88,6 +88,7 @@ export const startMyGovernedInstance = async (
   console.log('try fixing this');
 
   const poserInvitationP = E(committeeCreatorFacet).getPoserInvitation();
+
   const [initialPoserInvitation, electorateInvitationAmount] =
     await Promise.all([
       poserInvitationP,
@@ -228,7 +229,10 @@ export const startMyCharter = async (contractName, powers, config) => {
     undefined,
     'econCommitteeCharter',
   );
+  produceInstance[charterName].reset();
   produceInstance[charterName].resolve(startResult.instance);
+
+  produce[`${charterName}Kit`].reset();
   produce[`${charterName}Kit`].resolve(startResult);
 
   await inviteToMyCharter(
@@ -277,8 +281,13 @@ export const startMyCommittee = async (contractName, powers, config) => {
     terms: { committeeName, committeeSize: values(voterAddresses).length },
     privateArgs,
   });
+
+  produce[`${committeeName}Kit`].reset();
   produce[`${committeeName}Kit`].resolve(started);
+
+  produceInstance[committeeName].reset();
   produceInstance[committeeName].resolve(started.instance);
+
   console.log(committeeName, 'started');
 
   /** @param {[string, Promise<Invitation>][]} addrInvitations */

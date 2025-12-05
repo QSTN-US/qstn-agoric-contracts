@@ -152,6 +152,7 @@ export const startQstnContract = async (powers, config) => {
     },
   );
 
+  produce[`${contractName}Kit`].reset();
   produce[`${contractName}Kit`].resolve(it);
 
   await E(
