@@ -9,15 +9,14 @@ import { COSMOS_CHAINS } from './utilities/chains.js';
 import { gmpAddresses } from './utilities/gmp.js';
 
 /**
- * * @import {GuestInterface, GuestOf} from '@agoric/async-flow';
- * * @import {Orchestrator, OrchestrationFlow} from '@agoric/orchestration';
- * * @import {ChainHub} from '@agoric/orchestration/src/exos/chain-hub.js';
- * * @import {Vow} from '@agoric/vow';
- * * @import {ZCFSeat} from '@agoric/zoe/src/zoeService/zoe.js';
- * * @import {ZoeTools} from '@agoric/orchestration/src/utils/zoe-tools.js';
- * * @import {axelarGmpOutgoingMemo} from '../types.js';
- * * @import {CrossChainContractMessage} from "./utilities/types.js";
- * * @import {Bech32Address} from '@agoric/orchestration';
+ * @import {GuestInterface} from '@agoric/async-flow';
+ * @import {Orchestrator, OrchestrationFlow} from '@agoric/orchestration';
+ * @import {ChainHub} from '@agoric/orchestration/src/exos/chain-hub.js';
+ * @import {ZCFSeat} from '@agoric/zoe/src/zoeService/zoe.js';
+ * @import {ZoeTools} from '@agoric/orchestration/src/utils/zoe-tools.js';
+ * @import {axelarGmpOutgoingMemo} from '../types.js';
+ * @import {CrossChainContractMessage} from "./utilities/types.js";
+ * @import {Bech32Address} from '@agoric/orchestration';
  */
 
 const trace = makeTracer('SendTransaction');
@@ -183,6 +182,9 @@ export const sendTransaction = async (
           },
           { memo: JSON.stringify(memo) },
         );
+
+        seat.exit();
+
         trace(`GMP Transaction sent successfully`);
       } catch (e) {
         return recoverFailedTransfer(e);
@@ -275,6 +277,10 @@ export const sendTransaction = async (
           },
           { memo },
         );
+
+        seat.exit();
+
+        trace(`IBC Message Transaction sent successfully`);
       } catch (e) {
         return recoverFailedTransfer(e);
       }
