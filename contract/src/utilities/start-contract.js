@@ -5,7 +5,7 @@ import { E } from '@endo/far';
 
 /**
  * @import {AssetKind, Brand} from '@agoric/ertp/src/types.js';
- * @import {BoardAuxPowers} from './board-aux.core.js';
+ * @import {BoardAuxPowers} from './board-aux-core.js';
  */
 
 const { Fail } = assert;

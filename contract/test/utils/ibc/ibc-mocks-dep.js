@@ -1,4 +1,3 @@
-* eslint-disable jsdoc/require-param-type */
 /* eslint-disable jsdoc/require-param */
 import { Any } from '@agoric/cosmic-proto/google/protobuf/any.js';
 import { CosmosResponse } from '@agoric/cosmic-proto/icq/v1/packet.js';
@@ -35,8 +34,8 @@ const toPacket = obj => btoa(JSON.stringify(obj));
  *
  * XXX support multiple responses in a single message
  *
- * @param Encoder
- * @param message
+ * @param {any} Encoder
+ * @param {any} message
  */
 export function buildMsgResponseString(Encoder, message) {
   const encodedMsg = Encoder.encode(Encoder.fromPartial(message)).finish();
@@ -60,7 +59,7 @@ export function buildMsgResponseString(Encoder, message) {
 
 /**
  * Build an example error packet for a failed Tx Msg
- * @param msg
+ * @param {any} msg
  */
 export function buildMsgErrorString(
   msg = 'ABCI code: 5: error handling packet: see events for details',
@@ -76,9 +75,9 @@ export function buildMsgErrorString(
  *
  * XXX accept multiple queries at once
  *
- * @param Encoder
- * @param query
- * @param opts
+ * @param {any} Encoder
+ * @param {any} query
+ * @param {any} opts
  */
 export function buildQueryResponseString(
   Encoder,
@@ -125,7 +124,7 @@ export function buildTxPacketString(msgs) {
 /**
  * Build a query packet string for the mocked dibc bridge handler
  * @param {Array} msgs
- * @param opts
+ * @param {any} opts
  * @returns {string}
  */
 export function buildQueryPacketString(msgs, opts = {}) {

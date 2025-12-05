@@ -12,6 +12,7 @@ const { entries, fromEntries, keys } = Object;
 
 /**
  * @import {Brand, Issuer} from '@agoric/ertp/src/types.js';
+ * @import {Instance, Installation, AmountKeywordRecord} from '@agoric/zoe';
  */
 
 /**

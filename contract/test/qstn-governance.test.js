@@ -1,10 +1,14 @@
 import { test as anyTest } from '@agoric/zoe/tools/prepare-test-env-ava.js';
 import { createRequire } from 'node:module';
+import { prepareVowTools } from '@agoric/vow/vat.js';
 
 import { NonNullish } from '../src/utilities/objectTools.js';
 import { seatLike } from './utils/wallet-tools.js';
 import { INVITATION_MAKERS_DESC } from '../src/utilities/start-governed-contract.js';
-import { makeWalletFactoryContext } from './utils/walletFactory.js';
+import { makeWalletFactoryContext } from './utilities/walletFactory.js';
+import { makeBundleCacheContext } from '../tools/bundle-tools.js';
+import { mockBootstrapPowers } from './utils/boot-tools.js';
+import { installGovContracts } from './lib-gov-test/puppet-gov.js';
 
 /**
  * @import {QuestionDetails} from '@agoric/governance/src/types.js';
@@ -16,7 +20,7 @@ import { makeWalletFactoryContext } from './utils/walletFactory.js';
  * @typedef {Awaited<ReturnType<makeTestContext>>} TestContext
  */
 
-const test = /** @type {TestFn<TestContext>}} */ (anyTest);
+const test = /** @type {TestFn<TestContext>}} */ anyTest;
 
 const nodeRequire = createRequire(import.meta.url);
 
@@ -36,22 +40,22 @@ const makeTestContext = async t => {
   const wallet = await ctx.walletFactoryDriver.provideSmartWallet(address);
 
   t.log('bootstrap');
-  // const bc = await makeBundleCacheContext(t);
+  const bc = await makeBundleCacheContext(t);
 
-  // const { powers, vatAdminState } = await mockBootstrapPowers(t.log);
+  const { powers, vatAdminState } = await mockBootstrapPowers(t.log);
 
-  // await installGovContracts(t, powers, bc.bundleCache);
+  await installGovContracts(t, powers, bc.bundleCache);
 
-  // const vowTools = prepareVowTools(powers.zone);
+  const vowTools = prepareVowTools(powers.zone);
 
   return {
     ...ctx,
     wallet,
-    // ...bc,
-    // vowTools,
-    // powers,
-    // vatAdminState,
-    // bootsrapSPace: powers.consume,
+    ...bc,
+    vowTools,
+    powers,
+    vatAdminState,
+    bootsrapSPace: powers.consume,
   };
 };
 
@@ -160,16 +164,16 @@ export const voterAddresses = {
 
 test.before(async t => {
   t.context = await makeTestContext(t);
-  const { evalProposal, buildProposal } = t.context;
+  // const { evalProposal, buildProposal } = t.context;
 
-  await evalProposal(
-    buildProposal('../src/init-contract.js', [
-      '--net',
-      'bootstrap',
-      '--peer',
-      'axelar:connection-0:channel-0:uaxl',
-    ]),
-  );
+  // await evalProposal(
+  //   buildProposal('../src/init-contract.js', [
+  //     '--net',
+  //     'bootstrap',
+  //     '--peer',
+  //     'axelar:connection-0:channel-0:uaxl',
+  //   ]),
+  // );
 });
 
 test.beforeEach(t => {
