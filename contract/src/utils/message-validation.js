@@ -9,10 +9,7 @@ import { gmpAddresses } from './gmp.js';
 import { CosmosPayloadShape } from './type-guards.js';
 
 /**
- * @import {GuestInterface} from '@agoric/async-flow';
- * @import {Orchestrator} from '@agoric/orchestration';
- * @import {ChainHub} from '@agoric/orchestration/src/exos/chain-hub.js';
- * @import {CrossChainContractMessage} from "./types.js";
+ * @import {AccountTapState, CrossChainContractMessage} from "./types.js";
  * @import {axelarGmpOutgoingMemo} from '../../types.js';
  */
 
@@ -20,17 +17,10 @@ import { CosmosPayloadShape } from './type-guards.js';
  * Validates a single message and returns data needed for transfer
  *
  * @param {CrossChainContractMessage} message
- * @param {Orchestrator} orch
- * @param {GuestInterface<ChainHub>} chainHub
- * @param {string} agoricChainId
+ * @param {AccountTapState} accountState
  * @returns {Promise<{remoteChainId: string, memo: any, destinationAddress: string}>}
  */
-export const validateMessage = async (
-  message,
-  orch,
-  chainHub,
-  agoricChainId,
-) => {
+export const validateMessage = async (message, accountState) => {
   const { destinationChain, destinationAddress, type, chainType, payload } =
     message;
 
@@ -40,20 +30,16 @@ export const validateMessage = async (
       ? COSMOS_CHAINS.Axelar
       : COSMOS_CHAINS[destinationChain];
 
-  const remoteChain = await orch.getChain(chain);
-  const { chainId: remoteChainId, stakingTokens } =
-    await remoteChain.getChainInfo();
+  let remoteChannel;
+  if (chain === 'axelar') {
+    remoteChannel = accountState.axelarRemoteChannel;
+  } else if (chain === 'osmosis') {
+    remoteChannel = accountState.osmosisRemoteChannel;
+  } else {
+    remoteChannel = accountState.neutronRemoteChannel;
+  }
 
-  const remoteDenom = stakingTokens[0].denom;
-  remoteDenom || Fail`${remoteChainId} does not have stakingTokens in config`;
-
-  // Get Agoric chain ID and connection info
-  const { transferChannel } = await chainHub.getConnectionInfo(
-    agoricChainId,
-    remoteChainId,
-  );
-
-  assert(transferChannel.counterPartyChannelId, 'unable to find sourceChannel');
+  const { remoteChainInfo } = remoteChannel;
 
   // Validate chain-specific data
   if (chainType === 'evm') {
@@ -73,7 +59,7 @@ export const validateMessage = async (
     }
 
     return {
-      remoteChainId,
+      remoteChainId: remoteChainInfo.chainId,
       memo: JSON.stringify(memo),
       destinationAddress: gmpAddresses.AXELAR_GMP,
     };
@@ -90,7 +76,7 @@ export const validateMessage = async (
     mustMatch(parsedPayload, CosmosPayloadShape);
 
     return {
-      remoteChainId,
+      remoteChainId: remoteChainInfo.chainId,
       memo: payload,
       destinationAddress,
     };

@@ -2,7 +2,7 @@
 /// <reference types="@agoric/vats/src/core/types-ambient.js"/>
 
 import { Far } from '@endo/far';
-import { makeTracer } from '../src/utilities/debug.js';
+import { makeTracer } from '@agoric/internal';
 
 const trace = makeTracer('startOrch');
 

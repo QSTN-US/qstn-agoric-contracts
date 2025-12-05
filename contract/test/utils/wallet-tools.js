@@ -11,7 +11,7 @@ import { makeNotifier } from '@agoric/notifier';
 
 import '@agoric/zoe/src/zoeService/types-ambient.js';
 
-import { allValues, mapValues } from '../../src/utilities/objectTools.js';
+import { allValues, mapValues } from '../../src/utils/objectTools.js';
 
 /**
  * * @import {Amount, Brand, Issuer, Payment, Purse} from '@agoric/ertp/src/types.js';

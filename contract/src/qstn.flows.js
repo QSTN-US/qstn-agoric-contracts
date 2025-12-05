@@ -1,173 +1,175 @@
 /**
- * @file Implements the orchestration flow for qstn
+ * @file Implements the orchestration flow which does the following:
+ *
+ *   - Creates Qstn Account kit
  *
  */
-import { AmountMath } from '@agoric/ertp';
-import { makeTracer, NonNullish } from '@agoric/internal';
-import { mustMatch } from '@endo/patterns';
-import { Fail, makeError, q } from '@endo/errors';
-import { OfferArgsShape } from './utilities/type-guards.js';
-import { validateMessage } from './utilities/message-validation.js';
+
+import { makeTracer } from '@agoric/internal';
+import { Fail } from '@endo/errors';
+import { denomHash } from '@agoric/orchestration';
+import { COSMOS_CHAINS } from './utils/chains.js';
 
 /**
  * @import {GuestInterface} from '@agoric/async-flow';
  * @import {Orchestrator, OrchestrationFlow} from '@agoric/orchestration';
+ * @import {MakeAccountKit} from './qstn-account-kit.js';
  * @import {ChainHub} from '@agoric/orchestration/src/exos/chain-hub.js';
  * @import {ZCFSeat} from '@agoric/zoe/src/zoeService/zoe.js';
- * @import {ZoeTools} from '@agoric/orchestration/src/utils/zoe-tools.js';
- * @import {CrossChainContractMessage} from "./utilities/types.js";
- * @import {Bech32Address} from '@agoric/orchestration';
+ * @import {SupportedCosmosChains, RemoteChannelInfo} from './utils/types.js';
  */
 
-const trace = makeTracer('SendTransaction');
-const { entries } = Object;
+const trace = makeTracer('CrossChainLCA');
 
 /**
  * @satisfies {OrchestrationFlow}
  * @param {Orchestrator} orch
- * @param {object} ctx
- * @param {GuestInterface<ChainHub>} ctx.chainHub
- * @param {GuestInterface<ZoeTools>} ctx.zoeTools
- * @param {ZCFSeat} seat
  * @param {{
- * messages: CrossChainContractMessage[],
- * }} offerArgs
+ *  makeAccountKit: MakeAccountKit;
+ *  axelarRemoteChannel: Promise<RemoteChannelInfo>,
+ *  osmosisRemoteChannel: Promise<RemoteChannelInfo>,
+ *  neutronRemoteChannel: Promise<RemoteChannelInfo>,
+ * }} ctx
+ * @param {ZCFSeat} seat
  */
-export const sendTransaction = async (
+export const createAndMonitorLCA = async (
   orch,
-  { chainHub, zoeTools: { localTransfer, withdrawToSeat } },
+  {
+    makeAccountKit,
+    axelarRemoteChannel,
+    osmosisRemoteChannel,
+    neutronRemoteChannel,
+  },
   seat,
-  offerArgs,
 ) => {
-  trace('Inside sendTransaction flow');
+  trace('Creating CrossChain LCA and monitoring transfers');
 
-  mustMatch(offerArgs, OfferArgsShape);
+  const [agoric] = await Promise.all([orch.getChain('agoric')]);
 
-  const { messages } = offerArgs;
-
-  trace('Offer Args:', JSON.stringify(offerArgs));
-
-  // Get proposal from seat and extract amount
-  const { give } = seat.getProposal();
-  const [[_kw, amt]] = entries(give);
-
-  // Validate transfer amount is positive
-  amt.value > 0n || Fail`IBC transfer amount must be greater than zero`;
-
-  // Add up total amount required for all chains
-  const totalRequired = messages.reduce(
-    (acc, msg) => acc + BigInt(msg.amountForChain) + BigInt(msg.amountFee || 0),
-    0n,
-  );
-
-  totalRequired === amt.value ||
-    Fail`Total amount required for all chains ${q(totalRequired)} does not match amount given ${q(amt.value)}`;
-
-  trace('_kw, amt', _kw, amt);
-
-  // Get Agoric chain instance
-  const agoric = await orch.getChain('agoric');
-
-  // Get asset information from vbank
-  const agoricAssets = await agoric.getVBankAssetInfo();
-
-  // Find matching asset denomination
-  const { denom } = NonNullish(
-    agoricAssets.find(a => a.brand === amt.brand),
-    `${amt.brand} not registered in vbank`,
-  );
-
-  // Create local account for transactions
   const localAccount = await agoric.makeAccount();
+  trace('localAccount created successfully');
+  const localChainAddress = await localAccount.getAddress();
+  trace('Local Chain Address:', localChainAddress);
 
   const agoricChainId = (await agoric.getChainInfo()).chainId;
 
-  // Validate ALL messages in parallel and store results
-  trace('Validating all messages in parallel...');
+  const assets = await agoric.getVBankAssetInfo();
 
-  const validatedMessages = await Promise.all(
-    messages.map((msg, index) =>
-      validateMessage(msg, orch, chainHub, agoricChainId).then(result => ({
-        ...result,
-        message: msg,
-        index,
-      })),
-    ),
+  const axelar = await axelarRemoteChannel;
+  const osmosis = await osmosisRemoteChannel;
+  const neutron = await neutronRemoteChannel;
+
+  const accountKit = makeAccountKit({
+    localAccount,
+    localChainId: agoricChainId,
+    localChainAddress,
+    assets,
+    axelarRemoteChannel: axelar,
+    osmosisRemoteChannel: osmosis,
+    neutronRemoteChannel: neutron,
+  });
+
+  trace('tap created successfully');
+  // XXX consider storing appRegistration, so we can .revoke() or .updateTargetApp()
+  // @ts-expect-error tap.receiveUpcall: 'Vow<void> | undefined' not assignable to 'Promise<any>'
+  await localAccount.monitorTransfers(accountKit.tap);
+
+  trace('Monitoring transfers setup successfully');
+
+  seat.exit();
+
+  return harden({ invitationMakers: accountKit.invitationMakers });
+};
+harden(createAndMonitorLCA);
+
+/**
+ * @param {Orchestrator} orch
+ * @param {{
+ *  chainName: SupportedCosmosChains;
+ *  chainHub: GuestInterface<ChainHub>;
+ * }} ctx
+ * @returns {Promise<RemoteChannelInfo>}
+ */
+export const makeRemoteChannel = async (orch, { chainName, chainHub }) => {
+  const chain = COSMOS_CHAINS[chainName];
+
+  const [agoric, remoteChain] = await Promise.all([
+    orch.getChain('agoric'),
+    orch.getChain(chain),
+  ]);
+
+  const { chainId, stakingTokens } = await remoteChain.getChainInfo();
+
+  const remoteDenom = stakingTokens[0].denom;
+  remoteDenom || Fail`${chainId} does not have stakingTokens in config`;
+
+  trace(
+    `Creating remote channel to ${chainName} (${chain}) with denom ${remoteDenom}`,
   );
 
-  trace('All messages validated successfully');
+  const agoricChainId = (await agoric.getChainInfo()).chainId;
 
-  // ALL validation passed - safe to transfer funds
-  await localTransfer(seat, localAccount, give);
+  const { transferChannel } = await chainHub.getConnectionInfo(
+    agoricChainId,
+    chainId,
+  );
+  assert(transferChannel.counterPartyChannelId, 'unable to find sourceChannel');
 
-  // Track transfers for accurate recovery on failure
-  let transferredAmount = 0n;
-  const successfulTransfers = [];
+  const localDenom = `ibc/${denomHash({
+    denom: remoteDenom,
+    channelId: transferChannel.channelId,
+  })}`;
 
-  // Execute transfers sequentially using pre-validated data
-  try {
-    for (const validated of validatedMessages) {
-      const { message, remoteChainId, memo, destinationAddress } = validated;
-      const transferAmount =
-        BigInt(message.amountForChain) + BigInt(message.amountFee || 0);
+  const remoteChainInfo = await remoteChain.getChainInfo();
 
-      trace(
-        `Initiating ${message.chainType === 'evm' ? 'GMP' : 'IBC'} Transfer...`,
-      );
-
-      trace(`DENOM of token: ${denom}`);
-
-      await localAccount.transfer(
-        {
-          value: /** @type {Bech32Address} */ (destinationAddress),
-          encoding: 'bech32',
-          chainId: remoteChainId,
-        },
-        {
-          denom,
-          value: transferAmount,
-        },
-        { memo },
-      );
-
-      // Track successful transfer
-      transferredAmount += transferAmount;
-
-      successfulTransfers.push({
-        index: validated.index,
-        amount: transferAmount,
-        destination: destinationAddress,
-      });
-
-      seat.exit();
-
-      trace(
-        `${message.chainType === 'evm' ? 'GMP' : 'IBC'} Transaction sent successfully ✓`,
-      );
-    }
-  } catch (e) {
-    // Calculate remaining amount in localAccount
-    const remainingAmount = amt.value - transferredAmount;
-
-    trace(
-      `ERROR: Transfer failed after ${successfulTransfers.length} successful transfers`,
-    );
-
-    trace(`Transferred: ${transferredAmount}, Remaining: ${remainingAmount}`);
-
-    // Only recover what's actually left in localAccount
-    if (remainingAmount > 0n) {
-      const remainingGive = AmountMath.make(amt.brand, remainingAmount);
-      await withdrawToSeat(localAccount, seat, remainingGive);
-    }
-
-    const errorMsg = `Transaction failed: ${q(e)}. ${successfulTransfers.length}/${messages.length} messages succeeded. ${transferredAmount} tokens sent, ${remainingAmount} tokens recovered.`;
-    trace(`ERROR: ${errorMsg}`);
-
-    seat.fail(errorMsg);
-
-    throw makeError(errorMsg);
-  }
+  return harden({
+    localDenom,
+    remoteChainInfo,
+    channelId: transferChannel.channelId,
+    remoteDenom,
+  });
 };
 
-harden(sendTransaction);
+harden(makeRemoteChannel);
+
+/**
+ * @satisfies {OrchestrationFlow}
+ * @param {Orchestrator} orch
+ * @param {{
+ *  chainHub: GuestInterface<ChainHub>;
+ * }} ctx
+ * @returns {Promise<RemoteChannelInfo>}
+ */
+export const makeOsmosisRemoteChannel = async (orch, { chainHub }) => {
+  return makeRemoteChannel(orch, { chainName: 'Osmosis', chainHub });
+};
+
+harden(makeOsmosisRemoteChannel);
+
+/**
+ * @satisfies {OrchestrationFlow}
+ * @param {Orchestrator} orch
+ * @param {{
+ *  chainHub: GuestInterface<ChainHub>;
+ * }} ctx
+ * @returns {Promise<RemoteChannelInfo>}
+ */
+export const makeNeutronRemoteChannel = async (orch, { chainHub }) => {
+  return makeRemoteChannel(orch, { chainName: 'Neutron', chainHub });
+};
+
+harden(makeNeutronRemoteChannel);
+
+/**
+ * @satisfies {OrchestrationFlow}
+ * @param {Orchestrator} orch
+ * @param {{
+ *  chainHub: GuestInterface<ChainHub>;
+ * }} ctx
+ * @returns {Promise<RemoteChannelInfo>}
+ */
+export const makeAxelarRemoteChannel = async (orch, { chainHub }) => {
+  return makeRemoteChannel(orch, { chainName: 'Axelar', chainHub });
+};
+
+harden(makeAxelarRemoteChannel);

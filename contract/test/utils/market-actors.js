@@ -1,7 +1,7 @@
 // @ts-check
 import { E, getInterfaceOf } from '@endo/far';
 import { AmountMath, AssetKind } from '@agoric/ertp/src/amountMath.js';
-import { allValues, mapValues } from '../../src/utilities/objectTools.js';
+import { allValues, mapValues } from '../../src/utils/objectTools.js';
 import { seatLike } from './wallet-tools.js';
 import {
   makeNameProxy,

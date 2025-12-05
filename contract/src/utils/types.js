@@ -6,7 +6,8 @@ import '@agoric/vats/src/types.js';
 /**
  * @import {axelarGmpMessageType} from './gmp.js';
  * @import {COSMOS_CHAINS, EVM_CHAINS, ActiveChainType} from './chains.js';
- * @import {ChainInfo} from "@agoric/orchestration/src/orchestration-api.js"
+ * @import {CosmosChainInfo, Bech32Address, CosmosChainAddress, OrchestrationAccount} from "@agoric/orchestration"
+ * @import {AssetInfo} from '@agoric/vats/src/vat-bank.js';
  */
 
 /**
@@ -41,7 +42,7 @@ import '@agoric/vats/src/types.js';
 /**
  *  @typedef {{
  *   localDenom: string;
- *   remoteChainInfo: ChainInfo;
+ *   remoteChainInfo: CosmosChainInfo;
  *   channelId: string;
  *   remoteDenom: string;
  * }} RemoteChannelInfo
@@ -54,6 +55,35 @@ import '@agoric/vats/src/types.js';
  * }>
  * } QstnBootstrapSpace
  *
+ */
+
+/**
+ * @typedef {{
+ * amount: string;
+ * recipient: Bech32Address
+ * }} AxelarFeeObject
+ */
+
+/**
+ * @typedef {{
+ * destination_chain: string;
+ * destination_address: string;
+ * payload: number[] | null;
+ * type: GMPMessageType
+ * fee?: AxelarFeeObject
+ * }} AxelarGmpOutgoingMemo
+ */
+
+/**
+ * @typedef {{
+ * localAccount: OrchestrationAccount<{chainId: 'agoric'}>;
+ * localChainId: string;
+ * localChainAddress: CosmosChainAddress,
+ * assets: AssetInfo[];
+ * axelarRemoteChannel: RemoteChannelInfo
+ * osmosisRemoteChannel: RemoteChannelInfo
+ * neutronRemoteChannel: RemoteChannelInfo
+ * }} AccountTapState
  */
 
 export {};

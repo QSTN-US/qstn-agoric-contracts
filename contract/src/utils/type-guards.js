@@ -3,6 +3,12 @@
  */
 
 import { M } from '@endo/patterns';
+import { ChainInfoShape } from '@agoric/orchestration';
+
+/**
+ * @import {TypedPattern} from '@agoric/internal';
+ * @import {RemoteChannelInfo} from './types';
+ */
 
 export const MessageShape = M.splitRecord(
   {
@@ -69,3 +75,13 @@ export const CosmosPayloadShape = M.splitRecord({
     ),
   }),
 });
+
+/** @type {TypedPattern<RemoteChannelInfo>} */
+export const RemoteChannelInfoShape = {
+  localDenom: M.string(),
+  remoteChainInfo: ChainInfoShape,
+  channelId: M.string(),
+  remoteDenom: M.string(),
+};
+
+harden(RemoteChannelInfoShape);
