@@ -4,12 +4,11 @@
 
 import { Fail, makeError, q } from '@endo/errors';
 import { mustMatch } from '@endo/patterns';
-import { COSMOS_CHAINS } from './chains.js';
-import { gmpAddresses } from './gmp.js';
-import { CosmosPayloadShape } from './type-guards.js';
+import { CosmosPayloadShape, EvmPayloadShape } from './type-guards.js';
+import { buildGMPPayload } from './gmp.js';
 
 /**
- * @import {AccountTapState, CrossChainContractMessage} from "./types.js";
+ * @import {AccountTapState, CrossChainContractMessage, CosmosPayload, EvmPayload} from "./types.js";
  * @import {axelarGmpOutgoingMemo} from '../../types.js';
  */
 
@@ -21,63 +20,67 @@ import { CosmosPayloadShape } from './type-guards.js';
  * @returns {Promise<{remoteChainId: string, memo: any, destinationAddress: string}>}
  */
 export const validateMessage = async (message, accountState) => {
-  const { destinationChain, destinationAddress, type, chainType, payload } =
-    message;
-
-  // Determine connection chain
-  const chain =
-    chainType === 'evm'
-      ? COSMOS_CHAINS.Axelar
-      : COSMOS_CHAINS[destinationChain];
-
-  let remoteChannel;
-  if (chain === 'axelar') {
-    remoteChannel = accountState.axelarRemoteChannel;
-  } else if (chain === 'osmosis') {
-    remoteChannel = accountState.osmosisRemoteChannel;
-  } else {
-    remoteChannel = accountState.neutronRemoteChannel;
-  }
-
-  const { remoteChainInfo } = remoteChannel;
+  const { destinationChain, type, chainType, payload } = message;
 
   // Validate chain-specific data
   if (chainType === 'evm') {
+    if (!accountState.transferChannels.Axelar) {
+      throw makeError(`GMP transfers not enabled`);
+    }
+
+    mustMatch(payload, EvmPayloadShape);
+
+    const evmPayload = /** @type {EvmPayload} */ (payload);
+
+    const remoteChannel = accountState.transferChannels.Axelar;
+
+    const { remoteChainInfo } = remoteChannel;
+
+    const destinationAddress =
+      accountState.contracts[destinationChain].quizzler;
+
     /** @type {axelarGmpOutgoingMemo} */
     const memo = {
-      destination_chain: destinationChain,
+      destination_chain: accountState.chainIds[destinationChain],
       destination_address: destinationAddress,
-      payload: Array.from(payload),
+      payload: buildGMPPayload(evmPayload),
       type,
     };
 
     if (type === 1 || type === 2) {
       memo.fee = {
         amount: String(message.amountFee),
-        recipient: gmpAddresses.AXELAR_GAS,
+        recipient: accountState.gmpAddresses.AXELAR_GAS,
       };
     }
 
     return {
       remoteChainId: remoteChainInfo.chainId,
       memo: JSON.stringify(memo),
-      destinationAddress: gmpAddresses.AXELAR_GMP,
+      destinationAddress: accountState.gmpAddresses.AXELAR_GMP,
     };
   } else if (chainType === 'cosmos') {
-    // Validate payload structure
-    let parsedPayload;
+    mustMatch(payload, CosmosPayloadShape);
 
-    try {
-      parsedPayload = JSON.parse(payload);
-    } catch (e) {
-      throw makeError(`Invalid payload: must be valid JSON string. ${q(e)}`);
-    }
+    const cosmosPayload = /** @type {CosmosPayload} */ (payload);
 
-    mustMatch(parsedPayload, CosmosPayloadShape);
+    const remoteChannel = accountState.transferChannels[destinationChain];
+
+    const { remoteChainInfo } = remoteChannel;
+
+    const destinationAddress =
+      accountState.contracts[destinationChain].quizzler;
+
+    const memo = {
+      wasm: {
+        ...cosmosPayload,
+        contract: destinationAddress,
+      },
+    };
 
     return {
       remoteChainId: remoteChainInfo.chainId,
-      memo: payload,
+      memo: JSON.stringify(memo),
       destinationAddress,
     };
   } else {

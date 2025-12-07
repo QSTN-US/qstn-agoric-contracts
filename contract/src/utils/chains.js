@@ -1,16 +1,12 @@
 export const COSMOS_CHAINS = {
-  Osmosis: 'osmosis',
-  Neutron: 'neutron',
-  Axelar: 'axelar',
-};
-
-export const ActiveChainType = {
-  EVM: 'evm',
-  COSMOS: 'cosmos',
+  Osmosis: 'Osmosis',
+  Neutron: 'Neutron',
 };
 
 export const EVM_CHAINS = {
-  Avalanche: 'avalanche',
-  Base: 'base-sepolia',
-  Ethereum: 'ethereum-sepolia',
+  Arbitrum: 'Arbitrum',
+  Avalanche: 'Avalanche',
+  Base: 'Base',
+  Ethereum: 'Ethereum',
+  Optimism: 'Optimism',
 };

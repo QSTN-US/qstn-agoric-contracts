@@ -2,20 +2,18 @@ import { M, mustMatch } from '@endo/patterns';
 import { VowShape } from '@agoric/vow';
 import { makeTracer, NonNullish } from '@agoric/internal';
 import { Fail, makeError, q } from '@endo/errors';
-import { CosmosChainAddressShape } from '@agoric/orchestration';
 import { AmountMath } from '@agoric/ertp';
-import { RemoteChannelInfoShape, OfferArgsShape } from './utils/type-guards.js';
+import { OfferArgsShape, AccountKitStateShape } from './utils/type-guards.js';
 import { validateMessage } from './utils/message-validation.js';
 
 /**
  * @import {VowTools} from '@agoric/vow';
  * @import {Zone} from '@agoric/zone';
- * @import {TypedPattern} from '@agoric/internal';
  * @import {ZoeTools} from '@agoric/orchestration/src/utils/zoe-tools.js';
- * @import {AccountTapState} from './utils/types.js';
+ * @import {AccountTapState, CrossChainContractMessage} from './utils/types.js';
  * @import {ZCF, ZCFSeat} from '@agoric/zoe';
- * @import {CrossChainContractMessage} from "./utils/types.js"
  * @import {Bech32Address} from '@agoric/orchestration';
+ * @import {VTransferIBCEvent} from '@agoric/vats';
  */
 
 const trace = makeTracer('QstnAccountKit', false);
@@ -36,18 +34,6 @@ const InvitationMakerI = M.interface('invitationMaker', {
 });
 harden(InvitationMakerI);
 
-/** @type {TypedPattern<AccountTapState>} */
-const AccountKitStateShape = {
-  localChainAddress: CosmosChainAddressShape,
-  localChainId: M.string(),
-  localAccount: M.remotable('LocalAccount'),
-  assets: M.any(),
-  axelarRemoteChannel: RemoteChannelInfoShape,
-  osmosisRemoteChannel: RemoteChannelInfoShape,
-  neutronRemoteChannel: RemoteChannelInfoShape,
-};
-harden(AccountKitStateShape);
-
 /**
  * @param {Zone} zone
  * @param {{
@@ -67,6 +53,11 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
       }),
       holder: ACCOUNTI,
       invitationMakers: InvitationMakerI,
+      tap: M.interface('EvmTap', {
+        receiveUpcall: M.call(M.record()).returns(
+          M.or(VowShape, M.undefined()),
+        ),
+      }),
     },
     /**
      * @param {AccountTapState} initialState
@@ -205,8 +196,6 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
                 destination: destinationAddress,
               });
 
-              seat.exit();
-
               trace(
                 `${message.chainType === 'evm' ? 'GMP' : 'IBC'} Transaction sent successfully ✓`,
               );
@@ -236,9 +225,10 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
             const errorMsg = `Transaction failed: ${q(e)}. ${successfulTransfers.length}/${messages.length} messages succeeded. ${transferredAmount} tokens sent, ${remainingAmount} tokens recovered.`;
             trace(`ERROR: ${errorMsg}`);
 
-            seat.fail(errorMsg);
-
+            if (!seat.hasExited()) seat.fail(errorMsg);
             throw makeError(errorMsg);
+          } finally {
+            if (!seat.hasExited()) seat.exit();
           }
         },
         /**
@@ -293,6 +283,15 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
             continuingTransactionHandler,
             'transaction',
           );
+        },
+      },
+      tap: {
+        /**
+         * @param {VTransferIBCEvent} event
+         */
+        receiveUpcall(event) {
+          trace('receiveUpcall', event);
+          return undefined;
         },
       },
     },

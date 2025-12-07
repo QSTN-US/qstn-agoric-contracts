@@ -8,31 +8,36 @@ import { prepareChainHubAdmin } from '@agoric/orchestration/src/exos/chain-hub-a
 import { withOrchestration } from '@agoric/orchestration/src/utils/start-helper.js';
 import { registerChainsAndAssets } from '@agoric/orchestration/src/utils/chain-hub-helper.js';
 import { makeTracer } from '@agoric/internal';
+import { makeError } from '@endo/errors';
+
 import * as flows from './qstn.flows.js';
 import { prepareAccountKit } from './qstn-account-kit.js';
+import { extractRemoteChannelInfo } from './utils/helper.js';
+import { QstnPrivateArgsShape } from './utils/type-guards.js';
+
+const { keys } = Object;
 /**
- * @import {Remote} from '@agoric/vow';
  * @import {Zone} from '@agoric/zone';
- * @import {OrchestrationPowers, OrchestrationTools} from '@agoric/orchestration/src/utils/start-helper.js';
+ * @import {OrchestrationTools} from '@agoric/orchestration/src/utils/start-helper.js';
  * @import {CosmosChainInfo, Denom, DenomDetail} from '@agoric/orchestration';
- * @import {Marshaller, StorageNode} from '@agoric/internal/src/lib-chainStorage.js';
- * @import {ZCF} from '@agoric/zoe';
- * @import {GovernanceTerms} from '@agoric/governance/src/types.js';
+ * @import {ContractMeta, ZCF} from '@agoric/zoe';
  * @import {HostForGuest} from '@agoric/orchestration/src/facade.js'
+ * @import {QstnPrivateArgs, RemoteChannelInfo} from './utils/types.js';
  */
 
 const trace = makeTracer('AxelarGmp');
 
+/** @type {ContractMeta} */
+export const meta = {
+  privateArgsShape: QstnPrivateArgsShape,
+};
+harden(meta);
+
 /**
  * Orchestration contract to be wrapped by withOrchestration for Zoe
  *
- * @param {ZCF<GovernanceTerms<{}>>} zcf
- * @param {OrchestrationPowers &  {
- *   marshaller: Remote<Marshaller>;
- *   chainInfo?: Record<string, CosmosChainInfo>;
- *   assetInfo?: [Denom, DenomDetail & { brandKey?: string }][];
- *   storageNode: Remote<StorageNode>;
- * }} privateArgs
+ * @param {ZCF} zcf
+ * @param {QstnPrivateArgs} privateArgs
  * @param {Zone} zone
  * @param {OrchestrationTools} tools
  */
@@ -44,39 +49,62 @@ export const contract = async (
 ) => {
   trace('Inside Contract');
 
+  const {
+    chainInfo: passedChainInfo,
+    assetInfo,
+    contracts,
+    chainIds,
+    gmpAddresses,
+  } = privateArgs;
+
   registerChainsAndAssets(
     chainHub,
     zcf.getTerms().brands,
-    privateArgs.chainInfo,
-    privateArgs.assetInfo,
+    passedChainInfo,
+    assetInfo,
   );
 
   const chainHubAdminFacet = prepareChainHubAdmin(zone, chainHub);
 
-  const {
-    makeAxelarRemoteChannel,
-    makeOsmosisRemoteChannel,
-    makeNeutronRemoteChannel,
-  } = orchestrateAll(
-    {
-      makeAxelarRemoteChannel: flows.makeAxelarRemoteChannel,
-      makeOsmosisRemoteChannel: flows.makeOsmosisRemoteChannel,
-      makeNeutronRemoteChannel: flows.makeNeutronRemoteChannel,
-    },
-    {
-      chainHub,
-    },
-  );
+  const transferChannels = (() => {
+    const { agoric, axelar, neutron, osmosis } =
+      /** @type {Record<string, CosmosChainInfo>} */ (passedChainInfo);
 
-  const axelarRemoteChannel = zone.makeOnce('AxelarRemoteChannel', () =>
-    makeAxelarRemoteChannel(),
-  );
-  const osmosisRemoteChannel = zone.makeOnce('OsmosisRemoteChannel', () =>
-    makeOsmosisRemoteChannel(),
-  );
-  const neutronRemoteChannel = zone.makeOnce('NeutronRemoteChannel', () =>
-    makeNeutronRemoteChannel(),
-  );
+    const { connections } = /** @type {CosmosChainInfo} */ (agoric);
+
+    if (!connections) {
+      throw makeError('No connections found');
+    }
+
+    const neutronTransferChannel = connections[neutron.chainId].transferChannel;
+
+    const neutronConn = extractRemoteChannelInfo(
+      neutron,
+      neutronTransferChannel,
+    );
+
+    const osmosisTransferChannel = connections[osmosis.chainId].transferChannel;
+    const osmosisConn = extractRemoteChannelInfo(
+      osmosis,
+      osmosisTransferChannel,
+    );
+
+    /** @type {RemoteChannelInfo | undefined} */
+    let axelarConn;
+
+    if ('axelar' in passedChainInfo) {
+      const axelarTransferChannel = connections[axelar.chainId].transferChannel;
+      axelarConn = extractRemoteChannelInfo(axelar, axelarTransferChannel);
+    } else {
+      trace('⚠️ no axelar chainInfo; GMP not available', keys(passedChainInfo));
+    }
+
+    return harden({
+      Osmosis: osmosisConn,
+      Neutron: neutronConn,
+      Axelar: axelarConn,
+    });
+  })();
 
   const makeAccountKit = prepareAccountKit(zone.subZone('qstnTap'), {
     zcf,
@@ -89,10 +117,10 @@ export const contract = async (
     { createAndMonitorLCA: flows.createAndMonitorLCA },
     {
       makeAccountKit,
-      chainHub,
-      axelarRemoteChannel,
-      osmosisRemoteChannel,
-      neutronRemoteChannel,
+      transferChannels,
+      chainIds,
+      contracts,
+      gmpAddresses,
     },
   );
 

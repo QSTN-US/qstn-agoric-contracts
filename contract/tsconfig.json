@@ -23,8 +23,6 @@
     "noEmit": true
   },
   "include": [
-    "tools",
     "src",
-    "test",
   ]
 }
