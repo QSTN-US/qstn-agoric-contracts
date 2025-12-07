@@ -3,15 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start:ui": "cd ui && yarn dev",
     "lint": "prettier . --check",
-    "lint:fix": "prettier . --write",
-    "test": "yarn workspace deploy test && yarn workspace solidity test",
-    "lint:types": "yarn workspace deploy lint:types && yarn workspace contract lint:types && yarn workspace solidity lint:types",
-    "build:solidity": "cd solidity && yarn build",
-    "build": "yarn build:solidity",
-    "postinstall": "patch-package"
+    "lint:fix": "prettier . --write"
   },
+  "packageManager": "yarn@4.9.3",
   "private": true,
   "useWorkspaces": true,
   "workspaces": [
@@ -29,7 +24,8 @@
   "description": "",
   "devDependencies": {
     "concurrently": "^9.1.2",
-    "patch-package": "^8.0.0",
+    "patch-package": "^8.0.1",
+    "postinstall-postinstall": "^2.1.0",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.5.11"
   },

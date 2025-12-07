@@ -165,7 +165,7 @@ export const getNodeTestVaultsConfig = async ({
   if (config.coreProposals) {
     // remove Pegasus because it relies on IBC to Golang that isn't running
     config.coreProposals = config.coreProposals.filter(
-      (v) => v !== '@agoric/pegasus/scripts/init-core.js',
+      v => v !== '@agoric/pegasus/scripts/init-core.js',
     );
   }
 
@@ -176,7 +176,7 @@ export const getNodeTestVaultsConfig = async ({
     new Date().toISOString().replaceAll(/[^0-9TZ]/g, ''),
     `${Math.random()}`.replace(/.*[.]/, '').padEnd(8, '0').slice(0, 8),
     basename(configPath),
-  ].filter((s) => !!s);
+  ].filter(s => !!s);
   const testConfigPath = `${bundleDir}/${configFilenameParts.join('.')}`;
   await fsAmbientPromises.writeFile(
     testConfigPath,
@@ -221,14 +221,14 @@ export const makeProposalExtractor = (
     );
   };
 
-  const loadJSON = async (filePath) =>
+  const loadJSON = async filePath =>
     harden(JSON.parse(await fs.readFile(filePath, 'utf8')));
 
   // XXX parses the output to find the files but could write them to a path that can be traversed
   const parseProposalParts = (txt: string) => {
     const evals = [
       ...txt.matchAll(/swingset-core-eval (?<permit>\S+) (?<script>\S+)/g),
-    ].map((m) => {
+    ].map(m => {
       if (!m.groups) throw Fail`Invalid proposal output ${m[0]}`;
       const { permit, script } = m.groups;
       return { permit, script };
@@ -253,8 +253,7 @@ export const makeProposalExtractor = (
       runPackageScript(tmpDir, builderPath, process.env, args).toString(),
     );
 
-    const loadPkgFile = (fileName) =>
-      fs.readFile(join(tmpDir, fileName), 'utf8');
+    const loadPkgFile = fileName => fs.readFile(join(tmpDir, fileName), 'utf8');
 
     const evalsP = Promise.all(
       built.evals.map(async ({ permit, script }) => {
@@ -272,7 +271,7 @@ export const makeProposalExtractor = (
 
     const bundlesP = Promise.all(
       built.bundles.map(
-        async (bundleFile) =>
+        async bundleFile =>
           loadJSON(bundleFile) as Promise<EndoZipBase64Bundle>,
       ),
     );
@@ -638,7 +637,7 @@ export const makeSwingsetTestKit = async (
       }
       case `${BridgeId.VLOCALCHAIN}:VLOCALCHAIN_EXECUTE_TX`: {
         lcaSequenceNonce += 1;
-        return obj.messages.map((message) =>
+        return obj.messages.map(message =>
           fakeLocalChainBridgeTxMsgHandler(message, lcaSequenceNonce),
         );
       }
@@ -718,7 +717,7 @@ export const makeSwingsetTestKit = async (
   console.timeEnd('makeBaseSwingsetTestKit');
 
   let currentTime = 0n;
-  const updateTimer = async (time) => {
+  const updateTimer = async time => {
     await timer.poll(time);
   };
   const jumpTimeTo = (targetTime: Timestamp) => {
@@ -815,9 +814,9 @@ export const makeSwingsetTestKit = async (
     });
     // array-ify so we can flatten the array when names collide
     const allVats = [...stable.vatsByName.values()].flat(1);
-    const matches = allVats.filter((v) => v.name.includes(nameSubstr));
+    const matches = allVats.filter(v => v.name.includes(nameSubstr));
 
-    return matches.map((vat) => {
+    return matches.map(vat => {
       const stmt = stable.db.prepare(
         'SELECT incarnation FROM transcriptSpans WHERE isCurrent = 1 AND vatID = ?',
       );
@@ -881,7 +880,7 @@ export const makeSwingsetHarness = () => {
       return policy;
     },
     /** @param {boolean} forceEnabled */
-    useRunPolicy: (forceEnabled) => {
+    useRunPolicy: forceEnabled => {
       policyEnabled = forceEnabled;
       if (!policyEnabled) {
         policy = undefined;
@@ -937,15 +936,15 @@ export const fetchCoreEvalRelease = async (
       };
 
       assert.equal(plan.name, config.name);
-      const script = await fetch(`${artifacts}/${plan.script}`).then((r) =>
+      const script = await fetch(`${artifacts}/${plan.script}`).then(r =>
         r.text(),
       );
-      const permit = await fetch(`${artifacts}/${plan.permit}`).then((r) =>
+      const permit = await fetch(`${artifacts}/${plan.permit}`).then(r =>
         r.text(),
       );
       const bundles: EndoZipBase64Bundle[] = await Promise.all(
-        plan.bundles.map((b) =>
-          fetch(`${artifacts}/${b.bundleID}.json`).then((r) => r.json()),
+        plan.bundles.map(b =>
+          fetch(`${artifacts}/${b.bundleID}.json`).then(r => r.json()),
         ),
       );
 
@@ -994,8 +993,8 @@ export const fetchCoreEvalRelease = async (
       );
     }
     const bundles: EndoZipBase64Bundle[] = await Promise.all(
-      uniqueBundleIds.map((bundleId) =>
-        fetch(`${artifacts}/${bundleId}.json`).then((r) => r.json()),
+      uniqueBundleIds.map(bundleId =>
+        fetch(`${artifacts}/${bundleId}.json`).then(r => r.json()),
       ),
     );
 

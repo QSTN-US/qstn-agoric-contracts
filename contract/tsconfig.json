@@ -23,9 +23,6 @@
     "noEmit": true
   },
   "include": [
-    "tools",
     "src",
-    "test",
-    "../.qodo/axelar-gmp.test.ts"
   ]
 }
