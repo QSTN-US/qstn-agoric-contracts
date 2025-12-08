@@ -1,0 +1,63 @@
+{
+  "name": "deploy",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "devDependencies": {
+    "agoric": "dev",
+    "esbuild": "^0.25.2",
+    "execa": "^9.5.2",
+    "typescript": "~5.8.2"
+  },
+  "files": [
+    "src",
+    "bundles",
+    "dist"
+  ],
+  "scripts": {
+    "build": "esbuild ../contract/src/qstn.contract.js --bundle --platform=node --main-fields=main --outfile=dist/qstn.contract.bundle.js --metafile=dist/qstn.contract.meta.json",
+    "build:bundle": "npx bundle-source --cache-json dist/ ./dist/qstn.contract.bundle.js qstn",
+    "build:bundle-id": "sh -c '(printf b1-; jq -r .endoZipBase64Sha512 ./dist/bundle-qstn.json) >./dist/qstn.bundleId'",
+    "deploy:devnet": "yarn build && scripts/deploy-cli.ts src/portfolio.build.js --net=devnet",
+    "test": "yarn build && ava",
+    "lint-fix": "yarn lint:eslint --fix",
+    "lint": "yarn run -T run-s --continue-on-error 'lint:*'",
+    "lint:eslint": "yarn run -T eslint .",
+    "lint:types": "yarn run -T tsc"
+  },
+  "ava": {
+    "extensions": {
+      "js": true,
+      "ts": "module"
+    },
+    "files": [
+      "test/**/*.test.*"
+    ],
+    "nodeArguments": [
+      "--loader=ts-blank-space/register",
+      "--no-warnings"
+    ],
+    "require": [
+      "@endo/init/debug.js"
+    ],
+    "timeout": "20m",
+    "workerThreads": false
+  },
+  "dependencies": {
+    "@agoric/cosmic-swingset": "^0.42.0-u22.2",
+    "@agoric/deploy-script-support": "^0.11.0-u22.2",
+    "@agoric/internal": "0.3.3-dev-9cddc44.0.9cddc44",
+    "@agoric/orchestration": "^0.2.0-u22.2",
+    "@agoric/swingset-vat": "^0.33.0-u22.2",
+    "@agoric/telemetry": "^0.7.0-u22.2",
+    "@agoric/vats": "^0.16.0-u22.2",
+    "@agoric/xsnap": "^0.15.0-u22.2",
+    "@agoric/zoe": "0.27.0-u22.2",
+    "@endo/errors": "^1.2.4",
+    "@endo/far": "^1.1.4",
+    "@endo/patterns": "^1.7.0",
+    "ava": "^5.3.0",
+    "node-fetch-cache": "^5.0.2",
+    "viem": "^2.28.1"
+  }
+}
