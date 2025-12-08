@@ -32,7 +32,7 @@ export const isValidEvmAddress = address => {
  */
 export const assertValidEvmAddress = (address, context = 'EVM address') => {
   if (!isValidEvmAddress(address)) {
-    throw new Error(
+    throw makeError(
       `Invalid ${context}: must be 42-character hex string starting with 0x, got: ${address}`,
     );
   }
@@ -70,7 +70,7 @@ export const assertValidAxelarGmpAddress = (
 ) => {
   assertValidBech32Address(address, context);
   if (!address.startsWith('axelar1')) {
-    throw new Error(
+    throw makeError(
       `Invalid ${context}: must have axelar1 prefix, got: ${address}`,
     );
   }
