@@ -100,18 +100,14 @@ export const CosmosPayloadShape = M.splitRecord({
   ),
 });
 
-export const MessageShape = M.splitRecord(
-  {
-    destinationChain: M.and(M.string(), M.not('')),
-    chainType: M.or('evm', 'cosmos'),
-    type: M.or(1, 2, 3),
-    amountForChain: M.string(),
-    payload: M.or(EvmPayloadShape, CosmosPayloadShape),
-  },
-  {
-    amountFee: M.string(),
-  },
-);
+export const MessageShape = M.splitRecord({
+  destinationChain: M.and(M.string(), M.not('')),
+  chainType: M.or('evm', 'cosmos'),
+  type: M.or(1, 2, 3),
+  amountForChain: M.string(),
+  payload: M.or(EvmPayloadShape, CosmosPayloadShape),
+  amountFee: M.string(),
+});
 
 export const OfferArgsShape = M.splitRecord(
   {

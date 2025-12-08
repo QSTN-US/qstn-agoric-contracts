@@ -16,7 +16,7 @@ import { validateMessage } from './utils/message-validation.js';
  * @import {VTransferIBCEvent} from '@agoric/vats';
  */
 
-const trace = makeTracer('QstnAccountKit', false);
+const trace = makeTracer('Qstn-Account-Kit', false);
 
 const { entries } = Object;
 
@@ -113,6 +113,7 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
           const successfulTransfers = [];
           let amt;
 
+          await null;
           try {
             mustMatch(offerArgs, OfferArgsShape);
 
@@ -219,7 +220,7 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
             // Refund any remaining tokens in localAccount
             if (remainingAmount > 0n && amt) {
               const remainingGive = AmountMath.make(amt.brand, remainingAmount);
-              zoeTools.withdrawToSeat(
+              await zoeTools.withdrawToSeat(
                 this.state.localAccount,
                 seat,
                 remainingGive,

@@ -25,7 +25,7 @@ const { keys } = Object;
  * @import {QstnPrivateArgs, RemoteChannelInfo} from './utils/types.js';
  */
 
-const trace = makeTracer('AxelarGmp');
+const trace = makeTracer('Qstn-Contract');
 
 /** @type {ContractMeta} */
 export const meta = {
