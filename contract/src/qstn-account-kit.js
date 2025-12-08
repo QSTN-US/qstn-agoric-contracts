@@ -108,63 +108,67 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
         async sendTransactions(seat, offerArgs) {
           trace('Inside sendTransactions');
 
-          mustMatch(offerArgs, OfferArgsShape);
-
-          const { messages } = offerArgs;
-
-          trace('Offer Args:', JSON.stringify(offerArgs));
-
-          // Get proposal from seat and extract amount
-          const { give } = seat.getProposal();
-          const [[_kw, amt]] = entries(give);
-
-          // Validate transfer amount is positive
-          amt.value > 0n || Fail`IBC transfer amount must be greater than zero`;
-
-          // Add up total amount required for all chains
-          const totalRequired = messages.reduce(
-            (acc, msg) =>
-              acc + BigInt(msg.amountForChain) + BigInt(msg.amountFee || 0),
-            0n,
-          );
-
-          totalRequired === amt.value ||
-            Fail`Total amount required for all chains ${q(totalRequired)} does not match amount given ${q(amt.value)}`;
-
-          trace('_kw, amt', _kw, amt);
-
-          const { denom } = NonNullish(
-            this.state.assets.find(a => a.brand === amt.brand),
-
-            `${amt.brand} not registered in vbank`,
-          );
-
-          trace('amt and brand', amt.brand);
-
-          // Validate ALL messages in parallel and store results
-          trace('Validating all messages in parallel...');
-
-          const validatedMessages = await Promise.all(
-            messages.map((msg, index) =>
-              validateMessage(msg, this.state).then(result => ({
-                ...result,
-                message: msg,
-                index,
-              })),
-            ),
-          );
-
-          trace('All messages validated successfully');
-
           // Track transfers for accurate recovery on failure
           let transferredAmount = 0n;
           const successfulTransfers = [];
+          let amt;
 
-          // Execute transfers sequentially using pre-validated data
           try {
+            mustMatch(offerArgs, OfferArgsShape);
+
+            const { messages } = offerArgs;
+
+            trace('Offer Args:', JSON.stringify(offerArgs));
+
+            // Get proposal from seat and extract amount
+            const { give } = seat.getProposal();
+            const [[_kw, _amt]] = entries(give);
+            amt = _amt;
+
+            // Validate transfer amount is positive
+            amt.value > 0n ||
+              Fail`IBC transfer amount must be greater than zero`;
+
+            // Add up total amount required for all chains
+            const totalRequired = messages.reduce(
+              (acc, msg) =>
+                acc + BigInt(msg.amountForChain) + BigInt(msg.amountFee || 0),
+              0n,
+            );
+
+            totalRequired === amt.value ||
+              Fail`Total amount required for all chains ${q(totalRequired)} does not match amount given ${q(amt.value)}`;
+
+            trace('_kw, amt', _kw, amt);
+
+            const { denom } = NonNullish(
+              this.state.assets.find(a => a.brand === amt.brand),
+
+              `${amt.brand} not registered in vbank`,
+            );
+
+            trace('amt and brand', amt.brand);
+
+            // Validate ALL messages in parallel and store results
+            trace('Validating all messages in parallel...');
+
+            const validatedMessages = await Promise.all(
+              messages.map((msg, index) =>
+                validateMessage(msg, this.state).then(result => ({
+                  ...result,
+                  message: msg,
+                  index,
+                })),
+              ),
+            );
+
+            trace('All messages validated successfully');
+
+            // Execute transfers sequentially using pre-validated data
             for (const validated of validatedMessages) {
               const { message, remoteChainId, memo, destinationAddress } =
                 validated;
+
               const transferAmount =
                 BigInt(message.amountForChain) + BigInt(message.amountFee || 0);
 
@@ -202,7 +206,7 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
             }
           } catch (e) {
             // Calculate remaining amount in localAccount
-            const remainingAmount = amt.value - transferredAmount;
+            const remainingAmount = amt ? amt.value - transferredAmount : 0n;
 
             trace(
               `ERROR: Transfer failed after ${successfulTransfers.length} successful transfers`,
@@ -212,8 +216,8 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
               `Transferred: ${transferredAmount}, Remaining: ${remainingAmount}`,
             );
 
-            // Only recover what's actually left in localAccount
-            if (remainingAmount > 0n) {
+            // Refund any remaining tokens in localAccount
+            if (remainingAmount > 0n && amt) {
               const remainingGive = AmountMath.make(amt.brand, remainingAmount);
               zoeTools.withdrawToSeat(
                 this.state.localAccount,
@@ -222,7 +226,7 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
               );
             }
 
-            const errorMsg = `Transaction failed: ${q(e)}. ${successfulTransfers.length}/${messages.length} messages succeeded. ${transferredAmount} tokens sent, ${remainingAmount} tokens recovered.`;
+            const errorMsg = `Transaction failed: ${q(e)}. ${successfulTransfers.length} transfers succeeded. ${transferredAmount} tokens sent, ${remainingAmount} tokens recovered.`;
             trace(`ERROR: ${errorMsg}`);
 
             if (!seat.hasExited()) seat.fail(errorMsg);
