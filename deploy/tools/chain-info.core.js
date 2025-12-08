@@ -15,7 +15,7 @@ import { makeMarshal } from '@endo/marshal';
  * @import {ERef} from '@endo/eventual-send';
  */
 
-const trace = makeTracer('ChainInfoCore', true);
+const trace = makeTracer('Qstn-ChainInfoCore', true);
 
 // chainInfo has no cap data but we need to marshal bigints
 const marshalData = makeMarshal(_val => Fail`data only`);

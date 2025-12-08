@@ -61,7 +61,7 @@ import { FileSystemCache, NodeFetchCache } from 'node-fetch-cache';
 import { tmpdir } from 'node:os';
 import { icaMocks, protoMsgMockMap, protoMsgMocks } from './ibc/mocks.js';
 
-const trace = makeTracer('BSTSupport', false);
+const trace = makeTracer('Qstn-Support', false);
 
 // Releases are immutable, so we can cache them.
 // Doesn't help in CI but speeds up local development.

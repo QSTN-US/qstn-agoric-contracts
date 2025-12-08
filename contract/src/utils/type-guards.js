@@ -20,34 +20,37 @@ import { COSMOS_CHAINS, EVM_CHAINS } from './chains.js';
 
 const { fromEntries, keys } = Object;
 
+/**
+ * Non-empty string pattern
+ * Used for addresses, chain IDs, and other string fields requiring non-empty values
+ * Runtime validation provides format-specific checks (e.g., EVM hex format, bech32)
+ */
+const NonEmptyStringShape = M.and(M.string(), M.not(''));
+
 export const EvmCreateSurveyShape = M.splitRecord({
-  signature: M.and(M.string(), M.not('')),
-  token: M.and(M.string(), M.not('')),
+  signature: NonEmptyStringShape,
+  token: NonEmptyStringShape,
   timeToExpire: M.and(M.number(), M.gte(1)),
-  owner: M.and(M.string(), M.not('')),
-  surveyId: M.and(M.string(), M.not('')),
+  owner: NonEmptyStringShape,
+  surveyId: NonEmptyStringShape,
   participantsLimit: M.and(M.number(), M.gte(1)),
-  rewardAmount: M.and(M.string(), M.not('')),
-  surveyHash: M.and(M.string(), M.not('')),
+  rewardAmount: NonEmptyStringShape,
+  surveyHash: NonEmptyStringShape,
 });
 
 export const EvmCancelSurveyShape = M.splitRecord({
-  signature: M.and(M.string(), M.not('')),
-  token: M.and(M.string(), M.not('')),
+  signature: NonEmptyStringShape,
+  token: NonEmptyStringShape,
   timeToExpire: M.and(M.number(), M.gte(1)),
-  surveyId: M.and(M.string(), M.not('')),
+  surveyId: NonEmptyStringShape,
 });
 
 export const EvmPayRewardsSurveyShape = M.splitRecord({
-  signature: M.and(M.string(), M.not('')),
-  token: M.and(M.string(), M.not('')),
+  signature: NonEmptyStringShape,
+  token: NonEmptyStringShape,
   timeToExpire: M.and(M.number(), M.gte(1)),
-  surveyIds: M.and(
-    M.arrayOf(M.and(M.string(), M.not('')), { arrayLengthLimit: 100 }),
-  ),
-  participants: M.and(
-    M.arrayOf(M.and(M.string(), M.not('')), { arrayLengthLimit: 100 }),
-  ),
+  surveyIds: M.arrayOf(NonEmptyStringShape, { arrayLengthLimit: 100 }),
+  participants: M.arrayOf(NonEmptyStringShape, { arrayLengthLimit: 100 }),
 });
 
 export const EvmPayloadShape = M.splitRecord({
@@ -59,37 +62,33 @@ export const EvmPayloadShape = M.splitRecord({
 });
 
 export const CosmosCreateSurveyShape = M.splitRecord({
-  signature: M.and(M.string(), M.not('')),
-  token: M.and(M.string(), M.not('')),
+  signature: NonEmptyStringShape,
+  token: NonEmptyStringShape,
   time_to_expire: M.number(),
-  owner: M.and(M.string(), M.not('')),
-  survey_id: M.and(M.string(), M.not('')),
+  owner: NonEmptyStringShape,
+  survey_id: NonEmptyStringShape,
   participants_limit: M.and(M.number(), M.gte(1)),
-  reward_denom: M.and(M.string(), M.not('')),
+  reward_denom: NonEmptyStringShape,
   reward_amount: M.and(M.number(), M.gte(0)),
-  survey_hash: M.and(M.string(), M.not('')),
-  manager_pub_key: M.and(M.string(), M.not('')),
+  survey_hash: NonEmptyStringShape,
+  manager_pub_key: NonEmptyStringShape,
 });
 
 export const CosmosCancelSurveyShape = M.splitRecord({
-  signature: M.and(M.string(), M.not('')),
-  token: M.and(M.string(), M.not('')),
+  signature: NonEmptyStringShape,
+  token: NonEmptyStringShape,
   time_to_expire: M.number(),
-  survey_id: M.and(M.string(), M.not('')),
-  manager_pub_key: M.and(M.string(), M.not('')),
+  survey_id: NonEmptyStringShape,
+  manager_pub_key: NonEmptyStringShape,
 });
 
 export const CosmosPayRewardsShape = M.splitRecord({
-  signature: M.and(M.string(), M.not('')),
-  token: M.and(M.string(), M.not('')),
+  signature: NonEmptyStringShape,
+  token: NonEmptyStringShape,
   time_to_expire: M.number(),
-  survey_ids: M.and(
-    M.arrayOf(M.and(M.string(), M.not('')), { arrayLengthLimit: 100 }),
-  ),
-  participants: M.and(
-    M.arrayOf(M.and(M.string(), M.not('')), { arrayLengthLimit: 100 }),
-  ),
-  manager_pub_key: M.and(M.string(), M.not('')),
+  survey_ids: M.arrayOf(NonEmptyStringShape, { arrayLengthLimit: 100 }),
+  participants: M.arrayOf(NonEmptyStringShape, { arrayLengthLimit: 100 }),
+  manager_pub_key: NonEmptyStringShape,
 });
 
 export const CosmosPayloadShape = M.splitRecord({
@@ -100,14 +99,29 @@ export const CosmosPayloadShape = M.splitRecord({
   ),
 });
 
-export const MessageShape = M.splitRecord({
-  destinationChain: M.and(M.string(), M.not('')),
-  chainType: M.or('evm', 'cosmos'),
+const ValidEvms = M.or('Arbitrum', 'Avalanche', 'Base', 'Ethereum', 'Optimism');
+
+const ValidCosmos = M.or('Osmosis', 'Neutron');
+
+export const EvmMessageShape = M.splitRecord({
+  destinationChain: ValidEvms,
+  chainType: 'evm',
   type: M.or(1, 2, 3),
   amountForChain: M.string(),
-  payload: M.or(EvmPayloadShape, CosmosPayloadShape),
+  payload: EvmPayloadShape,
   amountFee: M.string(),
 });
+
+export const CosmosMessageShape = M.splitRecord({
+  destinationChain: ValidCosmos,
+  chainType: 'cosmos',
+  type: M.or(1, 2, 3),
+  amountForChain: M.string(),
+  payload: CosmosPayloadShape,
+  amountFee: M.string(),
+});
+
+export const MessageShape = M.or(EvmMessageShape, CosmosMessageShape);
 
 export const OfferArgsShape = M.splitRecord(
   {
@@ -128,12 +142,12 @@ harden(RemoteChannelInfoShape);
 
 /** @type {TypedPattern<EVMContractAddresses>} */
 const EVMContractAddressesShape = M.splitRecord({
-  quizzler: M.string(),
+  quizzler: NonEmptyStringShape,
 });
 
 /** @type {TypedPattern<CosmosContractAddresses>}*/
 const CosmosContractAddressesShape = M.splitRecord({
-  quizzler: M.string(),
+  quizzler: NonEmptyStringShape,
 });
 
 /** @type {TypedPattern<AccountTapState>} */
@@ -150,8 +164,8 @@ harden(AccountKitStateShape);
 
 /** @type {TypedPattern<GMPAddresses>} */
 const GmpAddressesShape = M.splitRecord({
-  AXELAR_GMP: M.string(),
-  AXELAR_GAS: M.string(),
+  AXELAR_GMP: NonEmptyStringShape,
+  AXELAR_GAS: NonEmptyStringShape,
 });
 
 /** @type {TypedPattern<QstnPrivateArgs>} */
@@ -162,15 +176,19 @@ export const QstnPrivateArgsShape = {
   chainInfo: M.and(
     M.recordOf(M.string(), ChainInfoShape),
     M.splitRecord({
-      agoric: M.any(),
-      neutron: M.any(),
-      osmosis: M.any(),
+      agoric: ChainInfoShape,
+      neutron: ChainInfoShape,
+      osmosis: ChainInfoShape,
     }),
   ),
-  assetInfo: M.arrayOf([M.string(), DenomDetailShape]),
+  assetInfo: M.arrayOf([NonEmptyStringShape, DenomDetailShape], {
+    arrayLengthLimit: 20,
+  }),
   chainIds: M.splitRecord({
-    ...fromEntries(keys(EVM_CHAINS).map(chain => [chain, M.string()])),
-    ...fromEntries(keys(COSMOS_CHAINS).map(chain => [chain, M.string()])),
+    ...fromEntries(keys(EVM_CHAINS).map(chain => [chain, NonEmptyStringShape])),
+    ...fromEntries(
+      keys(COSMOS_CHAINS).map(chain => [chain, NonEmptyStringShape]),
+    ),
   }),
   contracts: M.splitRecord({
     ...fromEntries(
