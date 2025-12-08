@@ -24,7 +24,7 @@ import { name, permit } from './qstn.contract.permit.js';
 
 const contractName = 'QstnRouter';
 
-const trace = makeTracer('start qstn contract', true);
+const trace = makeTracer('Qstn-Starter', true);
 
 /**
  * @typedef {{

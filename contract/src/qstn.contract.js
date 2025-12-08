@@ -14,6 +14,7 @@ import * as flows from './qstn.flows.js';
 import { prepareAccountKit } from './qstn-account-kit.js';
 import { extractRemoteChannelInfo } from './utils/helper.js';
 import { QstnPrivateArgsShape } from './utils/type-guards.js';
+import { validatePrivateArgsAddresses } from './utils/address-validation.js';
 
 const { keys } = Object;
 /**
@@ -25,7 +26,7 @@ const { keys } = Object;
  * @import {QstnPrivateArgs, RemoteChannelInfo} from './utils/types.js';
  */
 
-const trace = makeTracer('AxelarGmp');
+const trace = makeTracer('Qstn-Contract');
 
 /** @type {ContractMeta} */
 export const meta = {
@@ -56,6 +57,14 @@ export const contract = async (
     chainIds,
     gmpAddresses,
   } = privateArgs;
+
+  // Validate address formats in privateArgs
+  validatePrivateArgsAddresses(contracts, gmpAddresses);
+
+  // Validate assetInfo is non-empty
+  if (!assetInfo || assetInfo.length === 0) {
+    throw makeError('assetInfo must contain at least one asset');
+  }
 
   registerChainsAndAssets(
     chainHub,

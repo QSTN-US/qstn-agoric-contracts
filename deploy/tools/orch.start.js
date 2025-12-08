@@ -21,7 +21,7 @@ import { fromExternalConfig } from './config-marshal.js';
 
 const { entries, fromEntries, keys } = Object;
 
-const trace = makeTracer(`ORCH-Start`, true);
+const trace = makeTracer(`QSTN-Orch-Start`, true);
 
 /**
  * XXX Shouldn't the bridge or board vat handle this?
