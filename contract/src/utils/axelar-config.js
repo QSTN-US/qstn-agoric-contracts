@@ -55,7 +55,7 @@ export const AxelarChainIdMap = harden(
 /** @type {EvmAddressesMap} */
 const allQuizzlerAddresses = harden({
   mainnet: {
-    Avalanche: '0x',
+    Avalanche: '0x1746Cc9395bFE6e0f0545C072514aC9E11f730a5',
     Ethereum: '0x',
     Arbitrum: '0x',
     Optimism: '0x',
