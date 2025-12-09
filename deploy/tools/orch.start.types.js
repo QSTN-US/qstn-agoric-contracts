@@ -7,6 +7,7 @@
  * @import {ContractStartFunction} from '@agoric/zoe/src/zoeService/utils.js';
  * @import {CopyRecord} from '@endo/pass-style';
  * @import {Installation, Instance} from '@agoric/zoe';
+ * @import {Issuer, Brand} from '@agoric/ertp';
  *
  */
 

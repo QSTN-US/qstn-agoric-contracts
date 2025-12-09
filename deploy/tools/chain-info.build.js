@@ -276,7 +276,9 @@ const pickKeys = (obj, wanted) =>
   fromEntries(entries(obj).filter(([k]) => wanted.includes(k)));
 
 /** @param {Array<keyof typeof fetchedChainInfo>} chains */
-const getMainnetChainInfo = (chains = ['agoric', 'noble', 'axelar']) => {
+const getMainnetChainInfo = (
+  chains = ['agoric', 'osmosis', 'axelar', 'neutron'],
+) => {
   console.log('using static mainnet config');
   return harden(pickKeys(fetchedChainInfo, chains));
 };

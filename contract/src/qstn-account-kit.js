@@ -21,7 +21,6 @@ const trace = makeTracer('Qstn-Account-Kit', false);
 const { entries } = Object;
 
 const ACCOUNTI = M.interface('holder', {
-  getNonce: M.call().returns(M.bigint()),
   getLocalAddress: M.call().returns(M.any()),
   send: M.call(M.any(), M.any()).returns(M.any()),
   sendTransactions: M.call(M.any(), M.any()).returns(M.any()),
