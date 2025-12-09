@@ -28,7 +28,7 @@ const trace = makeTracer('Qstn-LCA-Flows');
  * }} ctx
  * @param {ZCFSeat} seat
  */
-export const createAndMonitorLCA = async (
+export const createLCA = async (
   orch,
   { makeAccountKit, transferChannels, gmpAddresses, chainIds, contracts },
   seat,
@@ -39,6 +39,7 @@ export const createAndMonitorLCA = async (
 
   const localAccount = await agoric.makeAccount();
   trace('localAccount created successfully');
+
   const localChainAddress = await localAccount.getAddress();
   trace('Local Chain Address:', localChainAddress);
 
@@ -58,14 +59,9 @@ export const createAndMonitorLCA = async (
   });
 
   trace('tap created successfully');
-  // XXX consider storing appRegistration, so we can .revoke() or .updateTargetApp()
-  // @ts-expect-error tap.receiveUpcall: 'Vow<void> | undefined' not assignable to 'Promise<any>'
-  await localAccount.monitorTransfers(accountKit.tap);
-
-  trace('Monitoring transfers setup successfully');
 
   seat.exit();
 
   return harden({ invitationMakers: accountKit.invitationMakers });
 };
-harden(createAndMonitorLCA);
+harden(createLCA);

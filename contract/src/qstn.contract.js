@@ -125,9 +125,9 @@ export const contract = async (
     zoeTools,
   });
 
-  /** @type {{ createAndMonitorLCA: HostForGuest<typeof flows.createAndMonitorLCA> }} */
-  const { createAndMonitorLCA } = orchestrateAll(
-    { createAndMonitorLCA: flows.createAndMonitorLCA },
+  /** @type {{ createLCA: HostForGuest<typeof flows.createLCA> }} */
+  const { createLCA } = orchestrateAll(
+    { createLCA: flows.createLCA },
     {
       makeAccountKit,
       transferChannels,
@@ -143,13 +143,13 @@ export const contract = async (
     'Send PF',
 
     M.interface('Send PF', {
-      createAndMonitorLCA: M.callWhen().returns(M.any()),
+      createLCA: M.callWhen().returns(M.any()),
     }),
 
     {
-      createAndMonitorLCA() {
+      createLCA() {
         return zcf.makeInvitation(
-          createAndMonitorLCA,
+          createLCA,
           'makeQstnAccount',
           undefined,
           proposalShape,
