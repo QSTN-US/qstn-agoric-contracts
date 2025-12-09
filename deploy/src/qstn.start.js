@@ -5,6 +5,7 @@ import { E } from '@endo/far';
 import { M } from '@endo/patterns';
 import {
   lookupInterchainInfo,
+  makeGetManifest,
   startOrchContract,
 } from '../tools/orch.start.js';
 import { name, permit } from './qstn.contract.permit.js';
@@ -22,8 +23,6 @@ import { name, permit } from './qstn.contract.permit.js';
  * @import {ChainInfoPowers} from '../tools/chain-info.core.js';
  */
 
-const contractName = 'QstnRouter';
-
 const trace = makeTracer('Qstn-Starter', true);
 
 /**
@@ -38,7 +37,7 @@ const trace = makeTracer('Qstn-Starter', true);
  */
 
 /** @type {TypedPattern<QstnDeployConfig>} */
-export const qstnDeployConfigShape = M.splitRecord(
+export const QstnDeployConfigShape = M.splitRecord(
   {
     // XXX more precise shape
     chainConfig: M.record(),
@@ -51,6 +50,17 @@ export const qstnDeployConfigShape = M.splitRecord(
     oldBoardId: M.string(),
   },
 );
+
+/**
+ * Extract chain ID from either EVM (Axelar) or Cosmos chain config
+ * @param {import('../../contract/src/utils/types.js').AxelarChainConfig | import('../../contract/src/utils/types.js').CosmosChainConfig} config
+ * @returns {string}
+ */
+const getChainId = config => {
+  if ('axelarId' in config) return config.axelarId;
+  if ('cosmosId' in config) return config.cosmosId;
+  throw Error('Invalid chain config: missing axelarId or cosmosId');
+};
 
 /**
  * @param {OrchestrationPowersWithStorage} orchestrationPowers
@@ -68,29 +78,20 @@ export const makePrivateArgs = async (
   const { chainInfo, assetInfo } = await lookupInterchainInfo(agoricNames, {
     agoric: ['ubld'],
     axelar: ['uaxl'],
-    neutron: ['utrn'],
+    neutron: ['untrn'],
     osmosis: ['uosmo'],
   });
 
-  const chainIds = /** @type {AxelarId & CosmosId} */ (
-    Object.fromEntries(
-      Object.entries(chainConfig).map(([chain, config]) => [
-        chain,
-        // @ts-expect-error dynamic config has either axelarId or cosmosId
-        config.axelarId || config.cosmosId,
-      ]),
-    )
-  );
+  // Build both chainIds and contracts in a single iteration
+  /** @type {AxelarId & CosmosId} */
+  const chainIds = /** @type {any} */ ({});
+  /** @type {EVMContractAddressesMap & CosmosContractAddressesMap} */
+  const contracts = /** @type {any} */ ({});
 
-  const contracts =
-    /** @type {EVMContractAddressesMap & CosmosContractAddressesMap} */ (
-      Object.fromEntries(
-        Object.entries(chainConfig).map(([chain, config]) => [
-          chain,
-          { ...config.contracts },
-        ]),
-      )
-    );
+  for (const [chain, config] of Object.entries(chainConfig)) {
+    chainIds[chain] = getChainId(config);
+    contracts[chain] = { ...config.contracts };
+  }
 
   /** @type {Parameters<typeof StartFn>[1]} */
   const it = harden({
@@ -111,7 +112,7 @@ harden(makePrivateArgs);
  * @param {{options: LegibleCapData<QstnDeployConfig>}} configStruct
  * @returns {Promise<void>}
  */
-export const startQstnRouter = async (permitted, configStruct) => {
+export const startQstn = async (permitted, configStruct) => {
   trace('startQstnContract', configStruct);
 
   /** @type {{ structure: { oldBoardId?: string } }} */
@@ -120,7 +121,7 @@ export const startQstnRouter = async (permitted, configStruct) => {
 
   if (oldBoardId) {
     const instance = await E(permitted.consume.board).getValue(oldBoardId);
-    const kit = await permitted.consume.qstnKit;
+    const kit = await permitted.consume[`${name}Kit`];
     assert.equal(instance, kit.instance);
     await E(kit.adminFacet).terminateContract(
       Error('shutting down for replacement'),
@@ -131,65 +132,25 @@ export const startQstnRouter = async (permitted, configStruct) => {
 
   const { issuer } = permitted;
 
-  const [BLD, IST] = await Promise.all([
-    issuer.consume.BLD,
-    issuer.consume.IST,
-  ]);
+  const BLD = await issuer.consume.BLD;
 
-  const issuerKeywordRecord = { IST, BLD };
+  const issuerKeywordRecord = { BLD };
 
   trace('Setting privateArgs');
 
   await startOrchContract(
     name,
-    qstnDeployConfigShape,
+    QstnDeployConfigShape,
     permit,
     makePrivateArgs,
     permitted,
     configStruct,
-    // @ts-ignore
     issuerKeywordRecord,
   );
 
-  trace(`${contractName} (re)started`);
+  trace(`${name} (re)started`);
 };
-harden(startQstnRouter);
+harden(startQstn);
 
-/** @type {import('@agoric/vats/src/core/lib-boot.js').BootstrapManifest} */
-const qstnManifest = {
-  [startQstnRouter.name]: {
-    consume: {
-      agoricNames: true,
-      board: true,
-      chainTimerService: true,
-      chainStorage: true,
-      cosmosInterchainService: true,
-      localchain: true,
-      startUpgradable: true,
-    },
-    installation: {
-      consume: { [contractName]: true },
-    },
-    instance: {
-      produce: { [contractName]: true },
-    },
-    brand: {
-      consume: { BLD: true },
-    },
-    issuer: {
-      consume: { BLD: true, IST: true },
-    },
-  },
-};
-
-harden(qstnManifest);
-
-export const getManifest = ({ restoreRef }, { installationRef, options }) => {
-  return {
-    manifest: qstnManifest,
-    installations: {
-      [contractName]: restoreRef(installationRef),
-    },
-    options,
-  };
-};
+export const getManifestForQstn = (u, d) =>
+  makeGetManifest(startQstn, permit, name)(u, d);

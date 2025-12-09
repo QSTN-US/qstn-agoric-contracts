@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "docker:bash": "cd deploy; docker compose exec agd bash",
+    "docker:make": "cd deploy; docker compose exec agd make -C /workspace/deploy",
     "lint": "prettier . --check",
     "lint:fix": "prettier . --write"
   },
@@ -24,6 +26,7 @@
   "description": "",
   "devDependencies": {
     "concurrently": "^9.1.2",
+    "node-gyp": "^12.1.0",
     "patch-package": "^8.0.1",
     "postinstall-postinstall": "^2.1.0",
     "prettier": "^3.5.3",

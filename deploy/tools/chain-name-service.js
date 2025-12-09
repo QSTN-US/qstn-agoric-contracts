@@ -60,7 +60,7 @@ export const makeDenomTools = chainInfo => {
  * TODO: NEEDSTEST
  *
  * until #10580, the contract's `issuerKeywordRecord` must include 'ATOM',
- * 'OSMO', 'IST', etc. for the local `chainHub` to know about brands.
+ * 'OSMO',, etc. for the local `chainHub` to know about brands.
  *
  * @param {Record<string, ChainInfo>} chainInfo
  * @param {Record<string, Denom[]>} tokenMap
@@ -69,9 +69,8 @@ export const makeDenomTools = chainInfo => {
 export const makeAssetInfo = (
   chainInfo,
   tokenMap = {
-    agoric: ['ubld', 'uist'],
+    agoric: ['ubld'],
     cosmoshub: ['uatom'],
-    noble: ['uusdc'],
     osmosis: ['uosmo', 'uion'],
     neutron: ['untrn'],
   },
@@ -99,7 +98,7 @@ export const makeAssetInfo = (
         chainName: chain,
         ...(chain === 'agoric' && {
           // `brandKey` instead of `brand` until #10580
-          // assumes issuerKeywordRecord includes brand keywords like `IST`, `OSMO`
+          // assumes issuerKeywordRecord includes brand keywords like `OSMO`
           brandKey: denom.replace(/^u/, '').toUpperCase(),
         }),
       },
@@ -129,7 +128,7 @@ export const makeAssetInfo = (
           chainName: holdingChain,
           ...(holdingChain === 'agoric' && {
             // `brandKey` instead of `brand` until #10580
-            // assumes issuerKeywordRecord includes brand keywords like `IST`, `OSMO`
+            // assumes issuerKeywordRecord includes brand keywords like, `OSMO`
             brandKey: denom.replace(/^u/, '').toUpperCase(),
           }),
         },

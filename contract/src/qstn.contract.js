@@ -150,7 +150,7 @@ export const contract = async (
       createAndMonitorLCA() {
         return zcf.makeInvitation(
           createAndMonitorLCA,
-          'makeAccount',
+          'makeQstnAccount',
           undefined,
           proposalShape,
         );

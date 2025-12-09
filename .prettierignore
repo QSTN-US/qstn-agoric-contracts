@@ -1,7 +1,7 @@
 node_modules
-startQstnRouter.js
-startQstnRouter-plan.json
-startQstnRouter-permit.json
+startQstn.js
+startQstn-plan.json
+startQstn-permit.json
 
 eval-register-interchain-bank-assets-permit.json
 eval-register-interchain-bank-assets-plan.json

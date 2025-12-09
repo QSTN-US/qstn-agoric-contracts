@@ -1,7 +1,5 @@
 import { makeHelpers } from '@agoric/deploy-script-support';
 import { parseArgs } from 'node:util';
-import { readFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import {
   axelarConfigTestnet,
   axelarConfig as axelarMainnetConfig,
@@ -13,11 +11,7 @@ import {
 } from '../../contract/src/utils/cosmos-config.js';
 import { toExternalConfig } from '../tools/config-marshal.js';
 import { name } from './qstn.contract.permit.js';
-import {
-  qstnDeployConfigShape,
-  getManifest,
-  startQstnRouter,
-} from './qstn-start.js';
+import { QstnDeployConfigShape, startQstn } from './qstn.start.js';
 import { isBech32Address } from '@agoric/orchestration/src/utils/address.js';
 
 /**
@@ -26,7 +20,7 @@ import { isBech32Address } from '@agoric/orchestration/src/utils/address.js';
  */
 
 /**
- * @import {QstnDeployConfig} from './qstn-start.js';
+ * @import {QstnDeployConfig} from './qstn.start.js';
  */
 
 const isValidAddr = addr => {
@@ -49,11 +43,11 @@ const parseBuilderArgs = args =>
  */
 const defaultProposalBuilder = async ({ publishRef, install }, config) => {
   return harden({
-    sourceSpec: './qstn-start.js',
+    sourceSpec: './qstn.start.js',
     getManifestCall: [
-      getManifest.name,
+      'getManifestForQstn',
       {
-        options: toExternalConfig(config, {}, qstnDeployConfigShape),
+        options: toExternalConfig(config, {}, QstnDeployConfigShape),
         installKeys: {
           [name]: publishRef(install('../dist/qstn.contract.bundle.js')),
         },
@@ -90,19 +84,17 @@ const build = async (homeP, endowments) => {
   const isMainnet = flags.net === 'mainnet';
   const config = configs[isMainnet ? 'mainnet' : 'testnet'];
 
-  if (isMainnet) {
-    for (const [chain, chainConfig] of Object.entries(config.chainConfig)) {
-      const addr = chainConfig.contracts.quizzler;
+  for (const [chain, chainConfig] of Object.entries(config.chainConfig)) {
+    const addr = chainConfig.contracts.quizzler;
 
-      if (!addr || !isValidAddr(addr) || !isBech32Address(addr)) {
-        throw new Error(`Invalid address for ${chain}: ${addr}`);
-      }
+    if (!addr || (!isValidAddr(addr) && !isBech32Address(addr))) {
+      throw new Error(`Invalid address for ${chain}: ${addr}`);
     }
   }
 
   const { writeCoreEval } = await makeHelpers(homeP, endowments);
   // TODO: unit test agreement with startPortfolio.name
-  await writeCoreEval(startQstnRouter.name, utils =>
+  await writeCoreEval(startQstn.name, utils =>
     defaultProposalBuilder(utils, harden(config)),
   );
 };

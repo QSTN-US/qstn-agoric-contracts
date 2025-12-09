@@ -27,6 +27,7 @@ const options = /** @type {const} */ {
   title: { type: 'string', default: TITLE },
   description: { type: 'string' },
 } as const satisfies ParseArgsConfig['options'];
+
 type ParsedArgs = {
   net: string;
   from: string;
@@ -109,6 +110,14 @@ const main = async (
     description,
   });
   console.log(title, info);
+
+  // Auto-vote on local network
+  if (net === 'local') {
+    console.log('Local network detected, submitting vote...');
+    const yarn = makeCmdRunner('yarn', { execFile });
+    await yarn.exec(['docker:make', 'vote']);
+    console.log('Vote submitted successfully');
+  }
 
   throw Error('TODO: wait for tx? wait for voting end?');
 };

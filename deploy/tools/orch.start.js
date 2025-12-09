@@ -124,6 +124,7 @@ export const startOrchContract = async (
     localchain,
     cosmosInterchainService,
   } = consume;
+
   const orchestrationPowers = await deeplyFulfilledObject(
     harden({
       localchain,
