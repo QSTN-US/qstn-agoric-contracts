@@ -214,3 +214,28 @@ export const QstnPrivateArgsShape = {
   }),
   gmpAddresses: GmpAddressesShape,
 };
+
+// export const InvitationProposalShape = M.splitRecord(
+//   {give: {Deposit: }}
+// )
+
+/**
+ * @param {Brand<'nat'>} brand must be a 'nat' brand, not checked
+ * @param {import('@agoric/ertp').NatValue} [min] optional minimum value
+ */
+export const makeNatAmountShape = (brand, min) =>
+  harden({ brand, value: min ? M.and(M.nat(), M.gte(min)) : M.nat() });
+
+/**
+ *
+ * @param {Brand<'nat'>} bld
+ */
+export const makeProposalShape = bld => {
+  const $Shape = makeNatAmountShape(bld);
+
+  return M.splitRecord(
+    { want: {}, give: M.splitRecord({}, { Deposit: $Shape }, {}) },
+    { exit: M.any() },
+    {},
+  );
+};
