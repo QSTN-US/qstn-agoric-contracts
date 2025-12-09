@@ -62,7 +62,7 @@ const allQuizzlerAddresses = harden({
     Base: '0x',
   },
   testnet: {
-    Avalanche: '0x6AAe256A231017939Ff870877F01072d94A633AB',
+    Avalanche: '0x1746Cc9395bFE6e0f0545C072514aC9E11f730a5',
     Ethereum: '0x',
     Arbitrum: '0x',
     Base: '0x',

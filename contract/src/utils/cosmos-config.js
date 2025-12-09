@@ -36,12 +36,12 @@ export const quizzlerAddresses = harden({
   mainnet: {
     Osmosis: 'osmo1',
     Neutron:
-      '"neutron1yvlzedzdn66x7zynn33z5mdkg6vlxa6tcqn70pkxksncnhuk47csq8yj9h"',
+      'neutron1em4guhq7hvheehl3wqm44slngckg6e0338utfrl9yx8tt0mmtgsq5x9fgx',
   },
   testnet: {
-    Osmosis: 'osmo1rmk9m9jh43hg5ra7kkvgpg9mq3rejq3mp0epw4cq77zm0g5xpg4slm3tup',
+    Osmosis: 'osmo1rc2e0gw25fk0vpm92n7nrckfhjzudmudgtv5kyzsyaa67mfd3f9q35djer',
     Neutron:
-      'neutron1jrx86xxpy7xrj0g7lhsjypjjz2hld58c3raz83g0w90fdlasgsqq9mnxdr',
+      'neutron1s7x6zxxsyush4drljt5v8chrekc5v4xdurs29ns6tllevsvnuwmsc6uwng',
   },
 });
 
