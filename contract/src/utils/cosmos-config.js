@@ -2,7 +2,14 @@
  * @import {CosmosContractAddressesMap, CosmosAddressesMap, CosmosChainConfigMap} from './types.js';
  */
 
-export const CosmosChainIdMap = harden({
+import { ENABLED_COSMOS_CHAINS } from './chain-config.js';
+
+const { keys, fromEntries } = Object;
+
+/**
+ * All possible Cosmos chain ID mappings
+ */
+const AllCosmosChainIds = harden({
   Osmosis: {
     testnet: 'osmo-test-5',
     mainnet: 'osmosis-1 ',
@@ -14,12 +21,22 @@ export const CosmosChainIdMap = harden({
 });
 
 /**
+ * Enabled Cosmos chain IDs (filtered by ENABLED_COSMOS_CHAINS)
+ */
+export const CosmosChainIdMap = harden(
+  fromEntries(
+    keys(ENABLED_COSMOS_CHAINS).map(chain => [chain, AllCosmosChainIds[chain]]),
+  ),
+);
+
+/**
  * @type {CosmosAddressesMap}
  */
 export const quizzlerAddresses = harden({
   mainnet: {
     Osmosis: 'osmo1',
-    Neutron: 'neutron1',
+    Neutron:
+      '"neutron1yvlzedzdn66x7zynn33z5mdkg6vlxa6tcqn70pkxksncnhuk47csq8yj9h"',
   },
   testnet: {
     Osmosis: 'osmo1rmk9m9jh43hg5ra7kkvgpg9mq3rejq3mp0epw4cq77zm0g5xpg4slm3tup',
@@ -29,61 +46,69 @@ export const quizzlerAddresses = harden({
 });
 
 /**
- * Testnet configuration with real contract addresses
+ * Testnet configuration with real contract addresses (filtered by ENABLED_COSMOS_CHAINS)
  * Made extensible to support qstn nfts in future
  * @type {CosmosContractAddressesMap}
  */
-const testnetContracts = {
-  Osmosis: {
-    quizzler: quizzlerAddresses.testnet.Osmosis,
-  },
-  Neutron: {
-    quizzler: quizzlerAddresses.testnet.Neutron,
-  },
-};
-
-harden(testnetContracts);
+const testnetContracts = harden(
+  /** @type {CosmosContractAddressesMap} */ (
+    fromEntries(
+      keys(ENABLED_COSMOS_CHAINS).map(chain => [
+        chain,
+        { quizzler: quizzlerAddresses.testnet[chain] },
+      ]),
+    )
+  ),
+);
 
 /**
- * Mainnet configuration with real contract addresses
- *  Made extensible to support qstn nfts in future
+ * Mainnet configuration with real contract addresses (filtered by ENABLED_COSMOS_CHAINS)
+ * Made extensible to support qstn nfts in future
  * @type {CosmosContractAddressesMap}
  */
-const mainnetContracts = {
-  Osmosis: {
-    quizzler: quizzlerAddresses.mainnet.Osmosis,
-  },
-  Neutron: {
-    quizzler: quizzlerAddresses.mainnet.Neutron,
-  },
-};
-
-harden(mainnetContracts);
-
-/**
- * @satisfies {CosmosChainConfigMap}
- */
-export const cosmosConfig = harden({
-  Osmosis: {
-    cosmosId: CosmosChainIdMap.Osmosis.mainnet,
-    contracts: { ...mainnetContracts.Osmosis },
-  },
-  Neutron: {
-    cosmosId: CosmosChainIdMap.Neutron.mainnet,
-    contracts: { ...mainnetContracts.Neutron },
-  },
-});
+const mainnetContracts = harden(
+  /** @type {CosmosContractAddressesMap} */ (
+    fromEntries(
+      keys(ENABLED_COSMOS_CHAINS).map(chain => [
+        chain,
+        { quizzler: quizzlerAddresses.mainnet[chain] },
+      ]),
+    )
+  ),
+);
 
 /**
- * @satisfies {CosmosChainConfigMap}
+ * Mainnet Cosmos chains (filtered by ENABLED_COSMOS_CHAINS)
+ * @type {CosmosChainConfigMap}
  */
-export const cosmosConfigTestnet = harden({
-  Osmosis: {
-    cosmosId: CosmosChainIdMap.Osmosis.testnet,
-    contracts: { ...testnetContracts.Osmosis },
-  },
-  Neutron: {
-    cosmosId: CosmosChainIdMap.Neutron.testnet,
-    contracts: { ...testnetContracts.Neutron },
-  },
-});
+export const cosmosConfig = harden(
+  /** @type {CosmosChainConfigMap} */ (
+    fromEntries(
+      keys(ENABLED_COSMOS_CHAINS).map(chain => [
+        chain,
+        {
+          cosmosId: CosmosChainIdMap[chain].mainnet,
+          contracts: { ...mainnetContracts[chain] },
+        },
+      ]),
+    )
+  ),
+);
+
+/**
+ * Testnet Cosmos chains (filtered by ENABLED_COSMOS_CHAINS)
+ * @type {CosmosChainConfigMap}
+ */
+export const cosmosConfigTestnet = harden(
+  /** @type {CosmosChainConfigMap} */ (
+    fromEntries(
+      keys(ENABLED_COSMOS_CHAINS).map(chain => [
+        chain,
+        {
+          cosmosId: CosmosChainIdMap[chain].testnet,
+          contracts: { ...testnetContracts[chain] },
+        },
+      ]),
+    )
+  ),
+);

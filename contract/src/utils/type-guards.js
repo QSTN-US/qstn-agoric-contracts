@@ -9,7 +9,7 @@ import {
   DenomDetailShape,
   OrchestrationPowersShape,
 } from '@agoric/orchestration';
-import { COSMOS_CHAINS, EVM_CHAINS } from './chains.js';
+import { ENABLED_EVM_CHAINS, ENABLED_COSMOS_CHAINS } from './chain-config.js';
 
 /**
  * @import {RemoteChannelInfo, AccountTapState} from './types';
@@ -99,9 +99,18 @@ export const CosmosPayloadShape = M.splitRecord({
   ),
 });
 
-const ValidEvms = M.or('Arbitrum', 'Avalanche', 'Base', 'Ethereum', 'Optimism');
+/**
+ * Dynamically generate ValidEvms pattern from enabled chains
+ * If only one chain is enabled, M.or needs special handling
+ */
+const enabledEvmChainNames = Object.keys(ENABLED_EVM_CHAINS);
+const ValidEvms = M.or(...enabledEvmChainNames);
 
-const ValidCosmos = M.or('Osmosis', 'Neutron');
+/**
+ * Dynamically generate ValidCosmos pattern from enabled chains
+ */
+const enabledCosmosChainNames = Object.keys(ENABLED_COSMOS_CHAINS);
+const ValidCosmos = M.or(...enabledCosmosChainNames);
 
 export const EvmMessageShape = M.splitRecord({
   destinationChain: ValidEvms,
@@ -185,17 +194,22 @@ export const QstnPrivateArgsShape = {
     arrayLengthLimit: 20,
   }),
   chainIds: M.splitRecord({
-    ...fromEntries(keys(EVM_CHAINS).map(chain => [chain, NonEmptyStringShape])),
     ...fromEntries(
-      keys(COSMOS_CHAINS).map(chain => [chain, NonEmptyStringShape]),
+      keys(ENABLED_EVM_CHAINS).map(chain => [chain, NonEmptyStringShape]),
+    ),
+    ...fromEntries(
+      keys(ENABLED_COSMOS_CHAINS).map(chain => [chain, NonEmptyStringShape]),
     ),
   }),
   contracts: M.splitRecord({
     ...fromEntries(
-      keys(EVM_CHAINS).map(chain => [chain, EVMContractAddressesShape]),
+      keys(ENABLED_EVM_CHAINS).map(chain => [chain, EVMContractAddressesShape]),
     ),
     ...fromEntries(
-      keys(COSMOS_CHAINS).map(chain => [chain, CosmosContractAddressesShape]),
+      keys(ENABLED_COSMOS_CHAINS).map(chain => [
+        chain,
+        CosmosContractAddressesShape,
+      ]),
     ),
   }),
   gmpAddresses: GmpAddressesShape,

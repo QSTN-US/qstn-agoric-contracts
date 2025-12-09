@@ -1,19 +1,19 @@
 /**
  * @import {EVMContractAddressesMap, AxelarChainIdEntry, EvmAddressesMap, AxelarChainConfigMap, GMPAddressesMap} from './types.js';
- * @import {EVM_CHAINS} from './chains.js';
  */
 
+import { ENABLED_EVM_CHAINS } from './chain-config.js';
+
+const { keys, fromEntries } = Object;
+
 /**
- * A mapping between internal AxelarChain enum keys and their corresponding
- * Axelar chain identifiers for both testnet and mainnet environments.
- *
- *
- * @type {Record<keyof typeof EVM_CHAINS, AxelarChainIdEntry>}
+ * All possible Axelar chain ID mappings
+ * Maps internal chain names to Axelar chain identifiers for testnet and mainnet
  *
  * @see {@link https://docs.axelar.dev/resources/contract-addresses/testnet/#evm-contract-addresses}
  * @see {@link https://github.com/axelarnetwork/axelarjs-sdk/blob/f84c8a21ad9685091002e24cac7001ed1cdac774/src/chains/supported-chains-list.ts | supported-chains-list.ts}
  */
-export const AxelarChainIdMap = harden({
+const AllAxelarChainIds = harden({
   Avalanche: {
     testnet: 'Avalanche',
     mainnet: 'Avalanche',
@@ -36,129 +36,108 @@ export const AxelarChainIdMap = harden({
   },
 });
 
+/**
+ * Enabled Axelar chain IDs (filtered by ENABLED_EVM_CHAINS)
+ *
+ * @type {Record<keyof typeof ENABLED_EVM_CHAINS, AxelarChainIdEntry>}
+ */
+export const AxelarChainIdMap = harden(
+  /** @type {Record<keyof typeof ENABLED_EVM_CHAINS, AxelarChainIdEntry>} */ (
+    fromEntries(
+      keys(ENABLED_EVM_CHAINS).map(chain => [chain, AllAxelarChainIds[chain]]),
+    )
+  ),
+);
+
 // XXX: Ideally this should be Record<keyof typeof AxelarChain, HexAddress>.
 // Currently using a looser type to work around compile-time errors.
 
 /** @type {EvmAddressesMap} */
-const quizzlerAddresses = harden({
+const allQuizzlerAddresses = harden({
   mainnet: {
-    Ethereum: '0x',
     Avalanche: '0x',
+    Ethereum: '0x',
     Arbitrum: '0x',
     Optimism: '0x',
     Base: '0x',
   },
   testnet: {
+    Avalanche: '0x6AAe256A231017939Ff870877F01072d94A633AB',
     Ethereum: '0x',
     Arbitrum: '0x',
     Base: '0x',
     Optimism: '0x',
-    Avalanche: '0x6AAe256A231017939Ff870877F01072d94A633AB',
   },
 });
 
 /**
- * Mainnet configuration with real contract addresses
+ * Mainnet configuration with real contract addresses (filtered by ENABLED_EVM_CHAINS)
  * Made extensible to support qstn nfts in future
  * @type {EVMContractAddressesMap}
  */
-const mainnetContracts = {
-  Avalanche: {
-    quizzler: quizzlerAddresses.mainnet.Avalanche,
-  },
-  Ethereum: {
-    quizzler: quizzlerAddresses.mainnet.Ethereum,
-  },
-  Optimism: {
-    quizzler: quizzlerAddresses.mainnet.Optimism,
-  },
-  Arbitrum: {
-    quizzler: quizzlerAddresses.mainnet.Arbitrum,
-  },
-  Base: {
-    quizzler: quizzlerAddresses.mainnet.Base,
-  },
-};
-harden(mainnetContracts);
+const mainnetContracts = harden(
+  /** @type {EVMContractAddressesMap} */ (
+    fromEntries(
+      keys(ENABLED_EVM_CHAINS).map(chain => [
+        chain,
+        { quizzler: allQuizzlerAddresses.mainnet[chain] },
+      ]),
+    )
+  ),
+);
 
 // XXX turn these inside out? contract.chain.address
 /**
- * Testnet configuration with testnet contract addresses
+ * Testnet configuration with testnet contract addresses (filtered by ENABLED_EVM_CHAINS)
  * Made extensible to support qstn nfts in future
  * @type {EVMContractAddressesMap}
  */
-const testnetContracts = {
-  Avalanche: {
-    quizzler: quizzlerAddresses.testnet.Avalanche,
-  },
-  Base: {
-    quizzler: quizzlerAddresses.testnet.Base,
-  },
-  Ethereum: {
-    quizzler: quizzlerAddresses.testnet.Ethereum,
-  },
-  Optimism: {
-    quizzler: quizzlerAddresses.testnet.Optimism,
-  },
-  Arbitrum: {
-    quizzler: quizzlerAddresses.testnet.Arbitrum,
-  },
-};
-harden(testnetContracts);
+const testnetContracts = harden(
+  /** @type {EVMContractAddressesMap} */ (
+    fromEntries(
+      keys(ENABLED_EVM_CHAINS).map(chain => [
+        chain,
+        { quizzler: allQuizzlerAddresses.testnet[chain] },
+      ]),
+    )
+  ),
+);
 
 /**
- * Mainnet chains only.
- *  @satisfies {AxelarChainConfigMap}
+ * Mainnet chains only (filtered by ENABLED_EVM_CHAINS).
+ * @type {AxelarChainConfigMap}
  */
-export const axelarConfig = harden({
-  Arbitrum: {
-    axelarId: AxelarChainIdMap.Arbitrum.mainnet,
-    contracts: { ...mainnetContracts.Arbitrum },
-  },
-  Avalanche: {
-    axelarId: AxelarChainIdMap.Avalanche.mainnet,
-    contracts: { ...mainnetContracts.Avalanche },
-  },
-  Base: {
-    axelarId: AxelarChainIdMap.Base.mainnet,
-    contracts: { ...mainnetContracts.Base },
-  },
-  Ethereum: {
-    axelarId: AxelarChainIdMap.Ethereum.mainnet,
-    contracts: { ...mainnetContracts.Ethereum },
-  },
-  Optimism: {
-    axelarId: AxelarChainIdMap.Optimism.mainnet,
-    contracts: { ...mainnetContracts.Optimism },
-  },
-});
+export const axelarConfig = harden(
+  /** @type {AxelarChainConfigMap} */ (
+    fromEntries(
+      keys(ENABLED_EVM_CHAINS).map(chain => [
+        chain,
+        {
+          axelarId: AxelarChainIdMap[chain].mainnet,
+          contracts: { ...mainnetContracts[chain] },
+        },
+      ]),
+    )
+  ),
+);
 
 /**
- * Testnet chains only.
- *  @satisfies {AxelarChainConfigMap}
+ * Testnet chains only (filtered by ENABLED_EVM_CHAINS).
+ * @type {AxelarChainConfigMap}
  */
-export const axelarConfigTestnet = harden({
-  Arbitrum: {
-    axelarId: AxelarChainIdMap.Arbitrum.testnet,
-    contracts: { ...testnetContracts.Arbitrum },
-  },
-  Avalanche: {
-    axelarId: AxelarChainIdMap.Avalanche.testnet,
-    contracts: { ...testnetContracts.Avalanche },
-  },
-  Base: {
-    axelarId: AxelarChainIdMap.Base.testnet,
-    contracts: { ...testnetContracts.Base },
-  },
-  Ethereum: {
-    axelarId: AxelarChainIdMap.Ethereum.testnet,
-    contracts: { ...testnetContracts.Ethereum },
-  },
-  Optimism: {
-    axelarId: AxelarChainIdMap.Optimism.testnet,
-    contracts: { ...testnetContracts.Optimism },
-  },
-});
+export const axelarConfigTestnet = harden(
+  /** @type {AxelarChainConfigMap} */ (
+    fromEntries(
+      keys(ENABLED_EVM_CHAINS).map(chain => [
+        chain,
+        {
+          axelarId: AxelarChainIdMap[chain].testnet,
+          contracts: { ...testnetContracts[chain] },
+        },
+      ]),
+    )
+  ),
+);
 
 /**
  * These addresses are canonical per Axelar.

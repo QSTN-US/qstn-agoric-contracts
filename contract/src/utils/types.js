@@ -5,7 +5,7 @@ import '@agoric/vats/src/types.js';
 
 /**
  * @import {axelarGmpMessageType} from './gmp.js';
- * @import {COSMOS_CHAINS, EVM_CHAINS} from './chains.js';
+ * @import {ENABLED_COSMOS_CHAINS, ENABLED_EVM_CHAINS} from './chain-config.js';
  * @import {Remote} from '@agoric/internal';
  * @import {Marshaller, StorageNode} from '@agoric/internal/src/lib-chainStorage.js';
  * @import {
@@ -27,11 +27,13 @@ import '@agoric/vats/src/types.js';
  */
 
 /**
- * @typedef {keyof typeof EVM_CHAINS} SupportedEVMChains
+ * @typedef {keyof typeof ENABLED_EVM_CHAINS} SupportedEVMChains
  */
 
+// /** @typedef {key} */
+
 /**
- * @typedef {keyof typeof COSMOS_CHAINS} SupportedCosmosChains
+ * @typedef {keyof typeof ENABLED_COSMOS_CHAINS} SupportedCosmosChains
  */
 
 /**
