@@ -13,7 +13,10 @@ import { makeError } from '@endo/errors';
 import * as flows from './qstn.flows.js';
 import { prepareAccountKit } from './qstn-account-kit.js';
 import { extractRemoteChannelInfo } from './utils/helper.js';
-import { QstnPrivateArgsShape } from './utils/type-guards.js';
+import {
+  makeProposalShape,
+  QstnPrivateArgsShape,
+} from './utils/type-guards.js';
 import { validatePrivateArgsAddresses } from './utils/address-validation.js';
 
 const { keys } = Object;
@@ -49,6 +52,7 @@ export const contract = async (
   { chainHub, orchestrateAll, zoeTools, vowTools },
 ) => {
   trace('Inside Contract');
+  const { brands } = zcf.getTerms();
 
   const {
     chainInfo: passedChainInfo,
@@ -133,6 +137,8 @@ export const contract = async (
     },
   );
 
+  const proposalShape = makeProposalShape(brands.BLD);
+
   const publicFacet = zone.exo(
     'Send PF',
 
@@ -146,6 +152,7 @@ export const contract = async (
           createAndMonitorLCA,
           'makeAccount',
           undefined,
+          proposalShape,
         );
       },
     },

@@ -2,7 +2,14 @@
  * @import {CosmosContractAddressesMap, CosmosAddressesMap, CosmosChainConfigMap} from './types.js';
  */
 
-export const CosmosChainIdMap = harden({
+import { ENABLED_COSMOS_CHAINS } from './chain-config.js';
+
+const { keys, fromEntries } = Object;
+
+/**
+ * All possible Cosmos chain ID mappings
+ */
+const AllCosmosChainIds = harden({
   Osmosis: {
     testnet: 'osmo-test-5',
     mainnet: 'osmosis-1 ',
@@ -14,76 +21,94 @@ export const CosmosChainIdMap = harden({
 });
 
 /**
+ * Enabled Cosmos chain IDs (filtered by ENABLED_COSMOS_CHAINS)
+ */
+export const CosmosChainIdMap = harden(
+  fromEntries(
+    keys(ENABLED_COSMOS_CHAINS).map(chain => [chain, AllCosmosChainIds[chain]]),
+  ),
+);
+
+/**
  * @type {CosmosAddressesMap}
  */
 export const quizzlerAddresses = harden({
   mainnet: {
     Osmosis: 'osmo1',
-    Neutron: 'neutron1',
+    Neutron:
+      'neutron1em4guhq7hvheehl3wqm44slngckg6e0338utfrl9yx8tt0mmtgsq5x9fgx',
   },
   testnet: {
-    Osmosis: 'osmo1rmk9m9jh43hg5ra7kkvgpg9mq3rejq3mp0epw4cq77zm0g5xpg4slm3tup',
+    Osmosis: 'osmo1rc2e0gw25fk0vpm92n7nrckfhjzudmudgtv5kyzsyaa67mfd3f9q35djer',
     Neutron:
-      'neutron1jrx86xxpy7xrj0g7lhsjypjjz2hld58c3raz83g0w90fdlasgsqq9mnxdr',
+      'neutron1s7x6zxxsyush4drljt5v8chrekc5v4xdurs29ns6tllevsvnuwmsc6uwng',
   },
 });
 
 /**
- * Testnet configuration with real contract addresses
+ * Testnet configuration with real contract addresses (filtered by ENABLED_COSMOS_CHAINS)
  * Made extensible to support qstn nfts in future
  * @type {CosmosContractAddressesMap}
  */
-const testnetContracts = {
-  Osmosis: {
-    quizzler: quizzlerAddresses.testnet.Osmosis,
-  },
-  Neutron: {
-    quizzler: quizzlerAddresses.testnet.Neutron,
-  },
-};
-
-harden(testnetContracts);
+const testnetContracts = harden(
+  /** @type {CosmosContractAddressesMap} */ (
+    fromEntries(
+      keys(ENABLED_COSMOS_CHAINS).map(chain => [
+        chain,
+        { quizzler: quizzlerAddresses.testnet[chain] },
+      ]),
+    )
+  ),
+);
 
 /**
- * Mainnet configuration with real contract addresses
- *  Made extensible to support qstn nfts in future
+ * Mainnet configuration with real contract addresses (filtered by ENABLED_COSMOS_CHAINS)
+ * Made extensible to support qstn nfts in future
  * @type {CosmosContractAddressesMap}
  */
-const mainnetContracts = {
-  Osmosis: {
-    quizzler: quizzlerAddresses.mainnet.Osmosis,
-  },
-  Neutron: {
-    quizzler: quizzlerAddresses.mainnet.Neutron,
-  },
-};
-
-harden(mainnetContracts);
-
-/**
- * @satisfies {CosmosChainConfigMap}
- */
-export const cosmosConfig = harden({
-  Osmosis: {
-    cosmosId: CosmosChainIdMap.Osmosis.mainnet,
-    contracts: { ...mainnetContracts.Osmosis },
-  },
-  Neutron: {
-    cosmosId: CosmosChainIdMap.Neutron.mainnet,
-    contracts: { ...mainnetContracts.Neutron },
-  },
-});
+const mainnetContracts = harden(
+  /** @type {CosmosContractAddressesMap} */ (
+    fromEntries(
+      keys(ENABLED_COSMOS_CHAINS).map(chain => [
+        chain,
+        { quizzler: quizzlerAddresses.mainnet[chain] },
+      ]),
+    )
+  ),
+);
 
 /**
- * @satisfies {CosmosChainConfigMap}
+ * Mainnet Cosmos chains (filtered by ENABLED_COSMOS_CHAINS)
+ * @type {CosmosChainConfigMap}
  */
-export const cosmosConfigTestnet = harden({
-  Osmosis: {
-    cosmosId: CosmosChainIdMap.Osmosis.testnet,
-    contracts: { ...testnetContracts.Osmosis },
-  },
-  Neutron: {
-    cosmosId: CosmosChainIdMap.Neutron.testnet,
-    contracts: { ...testnetContracts.Neutron },
-  },
-});
+export const cosmosConfig = harden(
+  /** @type {CosmosChainConfigMap} */ (
+    fromEntries(
+      keys(ENABLED_COSMOS_CHAINS).map(chain => [
+        chain,
+        {
+          cosmosId: CosmosChainIdMap[chain].mainnet,
+          contracts: { ...mainnetContracts[chain] },
+        },
+      ]),
+    )
+  ),
+);
+
+/**
+ * Testnet Cosmos chains (filtered by ENABLED_COSMOS_CHAINS)
+ * @type {CosmosChainConfigMap}
+ */
+export const cosmosConfigTestnet = harden(
+  /** @type {CosmosChainConfigMap} */ (
+    fromEntries(
+      keys(ENABLED_COSMOS_CHAINS).map(chain => [
+        chain,
+        {
+          cosmosId: CosmosChainIdMap[chain].testnet,
+          contracts: { ...testnetContracts[chain] },
+        },
+      ]),
+    )
+  ),
+);
