@@ -72,27 +72,25 @@ export const makePrivateArgs = async (
     osmosis: ['uosmo'],
   });
 
-  /** @type {AxelarId & CosmosId} */
-  const chainIds = {
-    Avalanche: chainConfig.Avalanche.axelarId,
-    Ethereum: chainConfig.Ethereum.axelarId,
-    Arbitrum: chainConfig.Arbitrum.axelarId,
-    Optimism: chainConfig.Optimism.axelarId,
-    Base: chainConfig.Base.axelarId,
-    Osmosis: chainConfig.Osmosis.cosmosId,
-    Neutron: chainConfig.Neutron.cosmosId,
-  };
+  const chainIds = /** @type {AxelarId & CosmosId} */ (
+    Object.fromEntries(
+      Object.entries(chainConfig).map(([chain, config]) => [
+        chain,
+        // @ts-expect-error dynamic config has either axelarId or cosmosId
+        config.axelarId || config.cosmosId,
+      ]),
+    )
+  );
 
-  /** @type {EVMContractAddressesMap & CosmosContractAddressesMap} */
-  const contracts = {
-    Avalanche: { ...chainConfig.Avalanche.contracts },
-    Ethereum: { ...chainConfig.Ethereum.contracts },
-    Arbitrum: { ...chainConfig.Arbitrum.contracts },
-    Optimism: { ...chainConfig.Optimism.contracts },
-    Base: { ...chainConfig.Base.contracts },
-    Osmosis: { ...chainConfig.Osmosis.contracts },
-    Neutron: { ...chainConfig.Neutron.contracts },
-  };
+  const contracts =
+    /** @type {EVMContractAddressesMap & CosmosContractAddressesMap} */ (
+      Object.fromEntries(
+        Object.entries(chainConfig).map(([chain, config]) => [
+          chain,
+          { ...config.contracts },
+        ]),
+      )
+    );
 
   /** @type {Parameters<typeof StartFn>[1]} */
   const it = harden({
@@ -174,6 +172,9 @@ const qstnManifest = {
     },
     instance: {
       produce: { [contractName]: true },
+    },
+    brand: {
+      consume: { BLD: true },
     },
     issuer: {
       consume: { BLD: true, IST: true },

@@ -18,6 +18,7 @@ import {
   getManifest,
   startQstnRouter,
 } from './qstn-start.js';
+import { isBech32Address } from '@agoric/orchestration/src/utils/address.js';
 
 /**
  * @typedef {import('@agoric/deploy-script-support/src/externalTypes.js').CoreEvalBuilder} CoreEvalBuilder
@@ -93,7 +94,7 @@ const build = async (homeP, endowments) => {
     for (const [chain, chainConfig] of Object.entries(config.chainConfig)) {
       const addr = chainConfig.contracts.quizzler;
 
-      if (!addr || !isValidAddr(addr)) {
+      if (!addr || !isValidAddr(addr) || !isBech32Address(addr)) {
         throw new Error(`Invalid address for ${chain}: ${addr}`);
       }
     }
