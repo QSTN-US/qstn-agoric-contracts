@@ -13,7 +13,6 @@ import { validateMessage } from './utils/message-validation.js';
  * @import {AccountTapState, CrossChainContractMessage} from './utils/types.js';
  * @import {ZCF, ZCFSeat} from '@agoric/zoe';
  * @import {Bech32Address} from '@agoric/orchestration';
- * @import {VTransferIBCEvent} from '@agoric/vats';
  */
 
 const trace = makeTracer('Qstn-Account-Kit', false);
@@ -52,11 +51,6 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
       }),
       holder: ACCOUNTI,
       invitationMakers: InvitationMakerI,
-      tap: M.interface('EvmTap', {
-        receiveUpcall: M.call(M.record()).returns(
-          M.or(VowShape, M.undefined()),
-        ),
-      }),
     },
     /**
      * @param {AccountTapState} initialState
@@ -287,15 +281,6 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
             continuingTransactionHandler,
             'transaction',
           );
-        },
-      },
-      tap: {
-        /**
-         * @param {VTransferIBCEvent} event
-         */
-        receiveUpcall(event) {
-          trace('receiveUpcall', event);
-          return undefined;
         },
       },
     },
