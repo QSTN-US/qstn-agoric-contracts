@@ -11,7 +11,11 @@ import { ChainInfoShape, IBCConnectionInfoShape } from '@agoric/orchestration';
 import fetchedChainInfo from '@agoric/orchestration/src/fetched-chain-info.js';
 import { M } from '@endo/patterns';
 import { parseArgs } from 'node:util';
-import { mockChainInfo } from '../test/utils/mock-chain.info.js';
+import {
+  MainnetEvmChains,
+  mockChainInfo,
+  TestNetEvmChains,
+} from '../test/utils/mock-chain.info.js';
 
 const { keys } = Object;
 
@@ -210,11 +214,10 @@ const getPeerChainInfo = async (chainId, peers, { agd }) => {
   const portId = 'transfer';
 
   /** @type {Record<string, ChainInfo>} */
-  const chainDetails = {};
+  let chainDetails = {};
 
   await null;
   for (const [peerName, myConn, myChan, denom] of parsePeers(peers)) {
-    console.debug(peerName, { denom });
     const connInfo = await agd
       .query(['ibc', 'connection', 'end', myConn])
       .then(x => x.connection);
@@ -223,7 +226,6 @@ const getPeerChainInfo = async (chainId, peers, { agd }) => {
       .query(['ibc', 'client', 'state', clientId])
       .then(x => x.client_state);
     const { chain_id: peerId } = clientState;
-    console.debug(peerName, { chainId: peerId, denom });
     chainDetails[peerName] = {
       namespace: 'cosmos',
       reference: peerId,
@@ -267,6 +269,12 @@ const getPeerChainInfo = async (chainId, peers, { agd }) => {
     connections,
     bech32Prefix: 'agoric',
   };
+
+  if (chainId === 'agoricdev-25') {
+    chainDetails = { ...chainDetails, ...TestNetEvmChains };
+  } else if (chainId === 'agoric-3') {
+    chainDetails = { ...chainDetails, ...MainnetEvmChains };
+  }
 
   return harden(chainDetails);
 };
