@@ -11,7 +11,7 @@ import {
 } from '../../contract/src/utils/cosmos-config.js';
 import { toExternalConfig } from '../tools/config-marshal.js';
 import { name } from './qstn.contract.permit.js';
-import { QstnDeployConfigShape, startQstn } from './qstn.start.js';
+import { QstnDeployConfigShape } from './qstn.start.js';
 import { isBech32Address } from '@agoric/orchestration/src/utils/address.js';
 
 /**
@@ -94,7 +94,7 @@ const build = async (homeP, endowments) => {
 
   const { writeCoreEval } = await makeHelpers(homeP, endowments);
   // TODO: unit test agreement with startPortfolio.name
-  await writeCoreEval(startQstn.name, utils =>
+  await writeCoreEval('eval-qstn', utils =>
     defaultProposalBuilder(utils, harden(config)),
   );
 };

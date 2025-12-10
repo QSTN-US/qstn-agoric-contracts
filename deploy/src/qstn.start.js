@@ -77,9 +77,6 @@ export const makePrivateArgs = async (
 
   const { chainInfo, assetInfo } = await lookupInterchainInfo(agoricNames, {
     agoric: ['ubld'],
-    axelar: ['uaxl'],
-    neutron: ['untrn'],
-    osmosis: ['uosmo'],
   });
 
   // Build both chainIds and contracts in a single iteration

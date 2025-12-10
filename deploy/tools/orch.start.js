@@ -110,8 +110,6 @@ export const startOrchContract = async (
     fromEntries(xVatEntries),
     deployConfigShape,
   );
-  const { terms: customTerms } = config;
-  trace('using terms', customTerms);
 
   const { chainStorage, board } = consume;
   const { storageNode, marshaller } = await makePublishingStorageKit(name, {
@@ -141,6 +139,8 @@ export const startOrchContract = async (
     config,
   );
 
+  console.log(privateArgs);
+
   const { startUpgradable } = consume;
   const installation = await installationP;
 
@@ -155,7 +155,6 @@ export const startOrchContract = async (
     label: name,
     installation,
     issuerKeywordRecord,
-    terms: customTerms,
     privateArgs,
   });
   const { instance } = kit;
@@ -312,7 +311,7 @@ export const mixConnections = (plainInfo, connInfos) => {
  */
 export const lookupInterchainInfo = async (
   agoricNames,
-  tokenMap = { agoric: ['ubld'], neutron: ['untrn'], osmosis: ['uosmo'] },
+  tokenMap = { agoric: ['ubld'] },
 ) => {
   await null;
   const plainInfos = /** @type {Record<string, ChainInfo>} */ (

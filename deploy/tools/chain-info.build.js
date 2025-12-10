@@ -11,6 +11,7 @@ import { ChainInfoShape, IBCConnectionInfoShape } from '@agoric/orchestration';
 import fetchedChainInfo from '@agoric/orchestration/src/fetched-chain-info.js';
 import { M } from '@endo/patterns';
 import { parseArgs } from 'node:util';
+import { mockChainInfo } from '../test/utils/mock-chain.info.js';
 
 const { keys } = Object;
 
@@ -203,6 +204,7 @@ const makeAgd = (
  *   info.agoric.connections has a connection to each peeer
  */
 const getPeerChainInfo = async (chainId, peers, { agd }) => {
+  if (chainId == 'agoriclocal') return mockChainInfo;
   /** @type {Record<string, IBCConnectionInfo>} */
   const connections = {};
   const portId = 'transfer';
@@ -294,7 +296,8 @@ export default async (homeP, endowments) => {
 
   await null;
   if (flags.net) {
-    if (!(flags.peer && flags.peer.length)) throw Error('--peer required');
+    if (!(flags.peer && flags.peer.length) && flags.net !== 'local')
+      throw Error('--peer required');
     // only import/use net access if asked with --net
     const { execFileSync } = await import('child_process');
     const { chainName: chainId, rpcAddrs } = await getNetConfig(

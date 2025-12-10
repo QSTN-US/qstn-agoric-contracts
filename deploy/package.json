@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "devDependencies": {
+    "@types/tmp": "^0",
     "agoric": "dev",
     "esbuild": "^0.25.2",
     "execa": "^9.5.2",
@@ -15,13 +16,13 @@
     "dist"
   ],
   "scripts": {
-    "build": "esbuild ../contract/src/qstn.contract.js --bundle --platform=node --main-fields=main --outfile=dist/qstn.contract.bundle.js --metafile=dist/qstn.contract.meta.json",
+    "build": "esbuild ../contract/src/qstn.contract.js --bundle --platform=node --format=esm --main-fields=main --outfile=dist/qstn.contract.bundle.js --metafile=dist/qstn.contract.meta.json",
     "build:bundle": "npx bundle-source --cache-json dist/ ./dist/qstn.contract.bundle.js qstn",
     "build:bundle-id": "sh -c '(printf b1-; jq -r .endoZipBase64Sha512 ./dist/bundle-qstn.json) >./dist/qstn.bundleId'",
     "deploy:devnet": "yarn build && scripts/deploy-cli.ts src/qstn.build.js --net=devnet",
     "deploy:local": "yarn build && scripts/deploy-cli.ts src/qstn.build.js --net=local",
     "docker:make": "docker compose exec agd make -C /workspace/deploy",
-    "test": "yarn build && ava --verbose",
+    "test": "yarn build && ava",
     "lint-fix": "yarn lint:eslint --fix",
     "lint": "yarn run -T run-s --continue-on-error 'lint:*'",
     "lint:eslint": "yarn run -T eslint .",
@@ -46,9 +47,11 @@
     "workerThreads": false
   },
   "dependencies": {
-    "@agoric/cosmic-swingset": "^0.42.0-u22.2",
-    "@agoric/deploy-script-support": "^0.11.0-u22.2",
+    "@agoric/builders": "0.1.1-dev-f96725d.0.f96725d",
+    "@agoric/cosmic-swingset": "dev",
+    "@agoric/deploy-script-support": "dev",
     "@agoric/ertp": "0.16.3-dev-eef7b69.0.eef7b69",
+    "@agoric/fast-usdc": "0.1.1-dev-f96725d.0.f96725d",
     "@agoric/internal": "0.3.3-dev-9cddc44.0.9cddc44",
     "@agoric/orchestration": "^0.2.0-u22.2",
     "@agoric/smart-wallet": "dev",
@@ -64,6 +67,7 @@
     "ava": "^5.3.0",
     "bech32": "^2.0.0",
     "node-fetch-cache": "^5.0.2",
+    "tmp": "^0.2.5",
     "viem": "^2.28.1"
   }
 }
