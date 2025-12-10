@@ -3,12 +3,11 @@
 import { makeTracer } from '@agoric/internal';
 import { E } from '@endo/far';
 import { M } from '@endo/patterns';
-import {
-  lookupInterchainInfo,
-  makeGetManifest,
-  startOrchContract,
-} from '../tools/orch.start.js';
+import { makeGetManifest, startOrchContract } from '../tools/orch.start.js';
 import { name, permit } from './qstn.contract.permit.js';
+import { Tracer } from '../tools/tracer.js';
+import { ENABLED_COSMOS_CHAINS, ENABLED_EVM_CHAINS } from './chain-config.js';
+import { ChainInfoShape, DenomDetailShape } from '@agoric/orchestration';
 
 /**
  * @import {TypedPattern, Remote} from '@agoric/internal';
@@ -20,10 +19,13 @@ import { name, permit } from './qstn.contract.permit.js';
  * @import {AxelarChainConfigMap, CosmosChainConfigMap, AxelarId, CosmosId, EVMContractAddressesMap, CosmosContractAddressesMap} from '../../contract/src/utils/types.js'
  * @import {OrchestrationPowersWithStorage} from '../tools/orch.start.types.js';
  * @import {QstnBootPowers} from './qstn.deploy.type.js'
- * @import {ChainInfoPowers} from '../tools/chain-info.core.js';
+ * @import {DenomDetail, ChainInfo} from '@agoric/orchestration';
  */
 
-const trace = makeTracer('Qstn-Starter', true);
+const { fromEntries, keys } = Object;
+
+const trace = makeTracer(`${Tracer}-Starter`, true);
+const NonEmptyStringShape = M.and(M.string(), M.not(''));
 
 /**
  * @typedef {{
@@ -33,6 +35,8 @@ const trace = makeTracer('Qstn-Starter', true);
  *     AXELAR_GAS: Bech32Address;
  *   };
  *   oldBoardId?: string;
+ *   assetInfo:[string, DenomDetail][];
+ *   chainInfo: Record<string, ChainInfo>;
  * } & CopyRecord} QstnDeployConfig
  */
 
@@ -44,6 +48,20 @@ export const QstnDeployConfigShape = M.splitRecord(
     gmpAddresses: M.splitRecord({
       AXELAR_GMP: M.string(),
       AXELAR_GAS: M.string(),
+    }),
+    chainInfo: M.splitRecord({
+      ...fromEntries(
+        keys(ENABLED_EVM_CHAINS).map(chain => [chain, ChainInfoShape]),
+      ),
+      ...fromEntries(
+        keys(ENABLED_COSMOS_CHAINS).map(chain => [
+          chain.toLowerCase(),
+          ChainInfoShape,
+        ]),
+      ),
+    }),
+    assetInfo: M.arrayOf([NonEmptyStringShape, DenomDetailShape], {
+      arrayLengthLimit: 20,
     }),
   },
   {
@@ -72,12 +90,7 @@ export const makePrivateArgs = async (
   marshaller,
   config,
 ) => {
-  const { chainConfig, gmpAddresses } = config;
-  const { agoricNames } = orchestrationPowers;
-
-  const { chainInfo, assetInfo } = await lookupInterchainInfo(agoricNames, {
-    agoric: ['ubld'],
-  });
+  const { chainConfig, gmpAddresses, assetInfo, chainInfo } = config;
 
   // Build both chainIds and contracts in a single iteration
   /** @type {AxelarId & CosmosId} */
@@ -105,7 +118,7 @@ export const makePrivateArgs = async (
 harden(makePrivateArgs);
 
 /**
- * @param {BootstrapPowers & QstnBootPowers & ChainInfoPowers } permitted
+ * @param {BootstrapPowers & QstnBootPowers } permitted
  * @param {{options: LegibleCapData<QstnDeployConfig>}} configStruct
  * @returns {Promise<void>}
  */
@@ -124,8 +137,6 @@ export const startQstn = async (permitted, configStruct) => {
       Error('shutting down for replacement'),
     );
   }
-
-  await permitted.consume.chainInfoPublished;
 
   const { issuer } = permitted;
 

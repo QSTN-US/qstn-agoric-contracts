@@ -73,66 +73,19 @@ const main = async (
 
   const pkgRd = makeFileRd(pkg, { fsp, path });
 
-  // Local network setup: Deploy chain-info before main contract
-  // This configures the chain registry with local network details
-  if (net === 'local') {
-    console.log('Running chain-info build for local network...');
-    const agoric = makeCmdRunner('npx', { execFile }).subCommand('agoric');
-
-    // Build the chain-info core-eval plan (generates bundles and manifest)
-    const chainInfoPlan = await runBuilder(
-      agoric,
-      pkgRd.join('tools/chain-info.build.js'),
-      ['--net=local'],
-      { cwd: pkgRd },
-    );
-    console.log('Chain-info build completed:', chainInfoPlan.name);
-
-    // Fetch network config and setup agd command runners
-    const {
-      chainName: chainId,
-      rpcAddrs: [node],
-    } = await fetchNetworkConfig(net, { fetch });
-    const agdq = makeCmdRunner('agd', { execFile }).withFlags('--node', node);
-    const agdTx = agdq.withFlags(
-      ...toCLIOptions(txFlags({ node, from, chainId })),
-      '--yes',
-    );
-
-    // Install each bundle to the chain's swingset kernel
-    for (const b of chainInfoPlan.bundles) {
-      const shortID = b.bundleID.slice(0, 8);
-      console.log('installing chain-info bundle', shortID, '...');
-      await waitForBlock(agdq);
-      const [{ txhash }] = await installBundles(agdTx, [b], pkgRd);
-      console.log('installed', shortID, txhash);
-    }
-
-    // Submit the core-eval proposal to execute the chain-info setup
-    const timeShort = new Date().toISOString().substring(11, 16);
-    await waitForBlock(agdq);
-    const chainInfoResult = await submitCoreEval(agdTx, [chainInfoPlan], {
-      title: `Chain Info ${timeShort}`,
-      description: 'Configure chain-info for local network',
-    });
-    console.log('Chain-info submitted:', chainInfoResult);
-
-    // Auto-vote to pass the proposal immediately on local network
-    console.log('Submitting vote for chain-info...');
-    const yarn = makeCmdRunner('yarn', { execFile });
-    await yarn.exec(['docker:make', 'vote']);
-    console.log('Chain-info vote submitted successfully');
-  }
-
   // Step 1: Build the main contract core-eval plan
   const agoric = makeCmdRunner('npx', { execFile }).subCommand('agoric');
   // Convert key=value bindings to --key value CLI options
-  const opts = bindings
-    .map(b => {
-      const [n, v] = b.split('=', 2);
-      return [`--${n}`, v];
-    })
-    .flat();
+  const opts = [
+    '--net',
+    net,
+    ...bindings
+      .map(b => {
+        const [n, v] = b.split('=', 2);
+        return [`--${n}`, v];
+      })
+      .flat(),
+  ];
   console.log('running', builder);
   const plan = await runBuilder(agoric, pkgRd.join(builder), opts, {
     cwd: pkgRd,
@@ -175,7 +128,7 @@ const main = async (
     console.log('Vote submitted successfully');
   }
 
-  throw Error('TODO: wait for tx? wait for voting end?');
+  console.log('Script Completed');
 };
 
 main().catch(err => {

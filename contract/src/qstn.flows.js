@@ -6,6 +6,7 @@
  */
 
 import { makeTracer } from '@agoric/internal';
+import { Tracer } from './utils/tracer.js';
 
 /**
  * @import {Orchestrator, OrchestrationFlow} from '@agoric/orchestration';
@@ -14,7 +15,7 @@ import { makeTracer } from '@agoric/internal';
  * @import {ChainIds, ContractMaps, GMPAddresses, TransferChannels} from './utils/types.js';
  */
 
-const trace = makeTracer('Qstn-LCA-Flows');
+const trace = makeTracer(`${Tracer}-LCA-Flows`);
 
 /**
  * @satisfies {OrchestrationFlow}

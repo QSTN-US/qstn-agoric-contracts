@@ -11,7 +11,6 @@ import { ChainInfoShape, IBCConnectionInfoShape } from '@agoric/orchestration';
 import fetchedChainInfo from '@agoric/orchestration/src/fetched-chain-info.js';
 import { M } from '@endo/patterns';
 import { parseArgs } from 'node:util';
-import { mockChainInfo } from '../test/utils/mock-chain.info.js';
 
 const { keys } = Object;
 
@@ -204,7 +203,6 @@ const makeAgd = (
  *   info.agoric.connections has a connection to each peeer
  */
 const getPeerChainInfo = async (chainId, peers, { agd }) => {
-  if (chainId == 'agoriclocal') return mockChainInfo;
   /** @type {Record<string, IBCConnectionInfo>} */
   const connections = {};
   const portId = 'transfer';
@@ -305,6 +303,7 @@ export default async (homeP, endowments) => {
       fetch,
     );
     const agd = makeAgd({ execFileSync }).withOpts({ rpcAddrs });
+    // @ts-ignore
     const dynChainInfo = await getPeerChainInfo(chainId, flags.peer, { agd });
 
     chainInfo = harden({ ...chainInfo, ...dynChainInfo });

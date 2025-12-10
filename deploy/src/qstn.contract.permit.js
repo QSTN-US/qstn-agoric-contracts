@@ -1,7 +1,7 @@
 // TODO: move meta.name
 import { orchPermit } from '../tools/orch.start.js';
 
-export const name = /** @type {const} */ 'qstn';
+export const name = /** @type {const} */ 'qstnRouterV3';
 
 /**
  * @import { BootstrapManifestPermit } from '@agoric/vats/src/core/lib-boot.js';

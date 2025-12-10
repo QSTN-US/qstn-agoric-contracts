@@ -13,7 +13,10 @@ import { toExternalConfig } from '../tools/config-marshal.js';
 import { name } from './qstn.contract.permit.js';
 import { QstnDeployConfigShape } from './qstn.start.js';
 import { isBech32Address } from '@agoric/orchestration/src/utils/address.js';
-
+import { getChainConfig } from '../tools/get-chain-config.js';
+import { Tracer } from '../tools/tracer.js';
+import { makeTracer } from '@agoric/internal';
+import { EvmChainInfo } from '../tools/static-config.js';
 /**
  * @typedef {import('@agoric/deploy-script-support/src/externalTypes.js').CoreEvalBuilder} CoreEvalBuilder
  * @typedef {import('@agoric/deploy-script-support/src/externalTypes.js').DeployScriptFunction} DeployScriptFunction
@@ -22,6 +25,8 @@ import { isBech32Address } from '@agoric/orchestration/src/utils/address.js';
 /**
  * @import {QstnDeployConfig} from './qstn.start.js';
  */
+
+const trace = makeTracer(`${Tracer}-Builder`);
 
 const isValidAddr = addr => {
   return /^0x[a-fA-F0-9]{40}$/.test(addr);
@@ -33,6 +38,7 @@ const parseBuilderArgs = args =>
     options: {
       net: { type: 'string' },
       replace: { type: 'string' },
+      peer: { type: 'string', multiple: true },
     },
   });
 
@@ -63,6 +69,15 @@ const build = async (homeP, endowments) => {
   const { values: flags } = parseBuilderArgs(scriptArgs);
   const boardId = flags.replace;
 
+  if (!flags.net) {
+    throw new Error('network is required');
+  }
+
+  const { assetInfo, chainInfo } = await getChainConfig({
+    net: flags.net,
+    peer: flags.peer ? flags.peer : [],
+  });
+
   /** @type {{ mainnet: QstnDeployConfig, testnet: QstnDeployConfig }} */
   const configs = harden({
     mainnet: {
@@ -71,6 +86,8 @@ const build = async (homeP, endowments) => {
         ...gmpAddresses.mainnet,
       },
       oldBoardId: boardId || '',
+      assetInfo,
+      chainInfo: { ...chainInfo, ...EvmChainInfo },
     },
     testnet: {
       chainConfig: { ...axelarConfigTestnet, ...cosmosConfigTestnet },
@@ -78,6 +95,8 @@ const build = async (homeP, endowments) => {
         ...gmpAddresses.testnet,
       },
       oldBoardId: boardId || '',
+      assetInfo,
+      chainInfo: { ...chainInfo, ...EvmChainInfo },
     },
   });
 

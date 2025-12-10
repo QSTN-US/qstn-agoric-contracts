@@ -28,6 +28,7 @@ import type { QstnBootPowers, StartFn } from '../src/qstn.deploy.type.js';
 import type { ChainInfoPowers } from '../tools/chain-info.core.js';
 import { setupQstnTest } from './utils/supports.ts';
 import { deploy as deployWalletFactory } from '../tools/wf-tools.js';
+import { getChainConfig } from '../tools/get-chain-config.js';
 
 const { entries, keys } = Object;
 
@@ -112,14 +113,23 @@ const makeBootstrap = async t => {
   return { common, powers, zoe, bundleAndInstall, provisionSmartWallet };
 };
 
-const qstnOptions = toExternalConfig(
-  harden({
-    chainConfig: { ...axelarConfig, ...cosmosConfig },
-    gmpAddresses: gmpAddresses.testnet,
-  } as QstnDeployConfig),
-  {},
-  QstnDeployConfigShape,
-);
+const getQstnOptions = async () => {
+  const { assetInfo, chainInfo } = await getChainConfig({
+    net: 'local',
+    peer: [],
+  });
+
+  return toExternalConfig(
+    harden({
+      chainConfig: { ...axelarConfig, ...cosmosConfig },
+      gmpAddresses: gmpAddresses.testnet,
+      assetInfo,
+      chainInfo,
+    } as QstnDeployConfig),
+    {},
+    QstnDeployConfigShape,
+  );
+};
 
 test('start qstn eval code without swingset', async t => {
   const { common, powers, bundleAndInstall } = await makeBootstrap(t);
@@ -132,7 +142,8 @@ test('start qstn eval code without swingset', async t => {
   );
 
   t.log('invoke coreEval');
-  await t.notThrowsAsync(startQstn(powers, { options: qstnOptions }));
+  const options = await getQstnOptions();
+  await t.notThrowsAsync(startQstn(powers, { options }));
 
   const { agoricNames } = bootstrap;
   const instance = (await E(agoricNames).lookup(

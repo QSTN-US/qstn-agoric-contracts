@@ -2,6 +2,7 @@ import { deeplyFulfilledObject, makeTracer, objectMap } from '@agoric/internal';
 import { E, passStyleOf } from '@endo/far';
 import { makeAssetInfo } from './chain-name-service.js';
 import { fromExternalConfig } from './config-marshal.js';
+import { Tracer } from './tracer.js';
 /**
  * @import { Issuer } from '@agoric/ertp';
  * @import { ManifestBundleRef } from '@agoric/deploy-script-support/src/externalTypes.js';
@@ -21,7 +22,7 @@ import { fromExternalConfig } from './config-marshal.js';
 
 const { entries, fromEntries, keys } = Object;
 
-const trace = makeTracer(`QSTN-Orch-Start`, true);
+const trace = makeTracer(`${Tracer}-Orch-Start`, true);
 
 /**
  * XXX Shouldn't the bridge or board vat handle this?
@@ -138,8 +139,6 @@ export const startOrchContract = async (
     marshaller,
     config,
   );
-
-  console.log(privateArgs);
 
   const { startUpgradable } = consume;
   const installation = await installationP;

@@ -6,12 +6,12 @@ import {
   documentStorageSchema,
 } from '@agoric/internal/src/storage-test-utils.js';
 import type { TestFn } from 'ava';
-import type { QstnBootPowers } from '../src/qstn.deploy.type.js';
 import {
   makeWalletFactoryContext,
   type WalletFactoryTestContext,
 } from '../tools/walletFactory.ts';
-import { mockChainInfo } from './utils/mock-chain.info.js';
+import { name as contractName } from '../src/qstn.contract.permit.js';
+import { chainInfo as mockChainInfo } from '../tools/static-config.js';
 
 const test: TestFn<WalletFactoryTestContext> = anyTest;
 
@@ -32,7 +32,7 @@ test.serial('publish chainInfo etc.', async t => {
   const { buildProposal, evalProposal, runUtils } = t.context;
   const materials = buildProposal('../tools/chain-info.build.js', [
     '--chainInfo',
-    JSON.stringify(mockChainInfo),
+    JSON.stringify(mockChainInfo('devnet')),
   ]);
   await evalProposal(materials);
   const { EV } = runUtils;
@@ -82,14 +82,14 @@ test.serial('contract starts; appears in agoricNames', async t => {
     'startChannelOpenInit',
     AckBehavior.Immediate,
   );
-  // TODO:  bridgeUtils.setBech32Prefix('noble');
 
-  const materials = buildProposal('../src/qstn.build.js', ['--net', 'testnet']);
+  const materials = buildProposal('../src/qstn.build.js', ['--net', 'local']);
+
   await evalProposal(materials);
 
   // update now that contract is instantiated
   refreshAgoricNamesRemotes();
-  t.truthy(agoricNamesRemotes.instance.qstn);
+  t.truthy(agoricNamesRemotes.instance[`${contractName}`]);
 
   await documentStorageSchema(t, storage, {
     node: 'agoricNames.instance',
@@ -97,8 +97,8 @@ test.serial('contract starts; appears in agoricNames', async t => {
     showValue,
   });
   await documentStorageSchema(t, storage, {
-    node: 'qstn',
-    owner: 'qstn',
+    node: contractName,
+    owner: contractName,
     showValue,
   });
 });
