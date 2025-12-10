@@ -12,6 +12,7 @@ import {
   type WalletFactoryTestContext,
 } from '../tools/walletFactory.ts';
 import { mockChainInfo } from './utils/mock-chain.info.js';
+import { name as contractName } from '../src/qstn.contract.permit.js';
 
 const test: TestFn<WalletFactoryTestContext> = anyTest;
 
@@ -89,7 +90,7 @@ test.serial('contract starts; appears in agoricNames', async t => {
 
   // update now that contract is instantiated
   refreshAgoricNamesRemotes();
-  t.truthy(agoricNamesRemotes.instance.qstn);
+  t.truthy(agoricNamesRemotes.instance[`${contractName}`]);
 
   await documentStorageSchema(t, storage, {
     node: 'agoricNames.instance',
@@ -97,8 +98,8 @@ test.serial('contract starts; appears in agoricNames', async t => {
     showValue,
   });
   await documentStorageSchema(t, storage, {
-    node: 'qstn',
-    owner: 'qstn',
+    node: contractName,
+    owner: contractName,
     showValue,
   });
 });

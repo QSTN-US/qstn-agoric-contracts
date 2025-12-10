@@ -5,6 +5,7 @@ import { Fail, makeError, q } from '@endo/errors';
 import { AmountMath } from '@agoric/ertp';
 import { OfferArgsShape, AccountKitStateShape } from './utils/type-guards.js';
 import { validateMessage } from './utils/message-validation.js';
+import { Tracer } from './utils/tracer.js';
 
 /**
  * @import {VowTools} from '@agoric/vow';
@@ -15,7 +16,7 @@ import { validateMessage } from './utils/message-validation.js';
  * @import {Bech32Address} from '@agoric/orchestration';
  */
 
-const trace = makeTracer('Qstn-Account-Kit', false);
+const trace = makeTracer(`${Tracer}-Account-Kit`, true);
 
 const { entries } = Object;
 

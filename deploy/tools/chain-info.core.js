@@ -3,6 +3,7 @@ import { registerChain } from '@agoric/orchestration/src/chain-info.js';
 import { Fail } from '@endo/errors';
 import { E, Far } from '@endo/far';
 import { makeMarshal } from '@endo/marshal';
+import { Tracer } from '../src/tracer.js';
 
 // TODO: refactor overlap with init-chain-info.js in orch pkg
 
@@ -10,12 +11,11 @@ import { makeMarshal } from '@endo/marshal';
  * @import {Remote, ERemote} from '@agoric/internal';
  * @import {ChainInfo} from '@agoric/orchestration';
  * @import {NameHub, NameAdmin} from '@agoric/vats';
- * @import {AxelarChainConfigMap, CosmosChainConfigMap} from '../../contract/src/utils/types.js';
- * @import {Marshaller, StorageNode} from '@agoric/internal/src/lib-chainStorage.js';
+ * @import {StorageNode} from '@agoric/internal/src/lib-chainStorage.js';
  * @import {ERef} from '@endo/eventual-send';
  */
 
-const trace = makeTracer('Qstn-ChainInfoCore', true);
+const trace = makeTracer(`${Tracer}-ChainInfoCore`);
 
 // chainInfo has no cap data but we need to marshal bigints
 const marshalData = makeMarshal(_val => Fail`data only`);
@@ -111,7 +111,6 @@ const publishChainInfoToChainStorage = async (
  * @param {{
  *   options: {
  *     chainInfo?: Record<string, ChainInfo>;
- *     configs: AxelarChainConfigMap & CosmosChainConfigMap;
  *   };
  * }} config
  */

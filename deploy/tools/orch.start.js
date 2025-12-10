@@ -2,6 +2,7 @@ import { deeplyFulfilledObject, makeTracer, objectMap } from '@agoric/internal';
 import { E, passStyleOf } from '@endo/far';
 import { makeAssetInfo } from './chain-name-service.js';
 import { fromExternalConfig } from './config-marshal.js';
+import { Tracer } from '../src/tracer.js';
 /**
  * @import { Issuer } from '@agoric/ertp';
  * @import { ManifestBundleRef } from '@agoric/deploy-script-support/src/externalTypes.js';
@@ -21,7 +22,7 @@ import { fromExternalConfig } from './config-marshal.js';
 
 const { entries, fromEntries, keys } = Object;
 
-const trace = makeTracer(`QSTN-Orch-Start`, true);
+const trace = makeTracer(`${Tracer}-Orch-Start`);
 
 /**
  * XXX Shouldn't the bridge or board vat handle this?
@@ -308,24 +309,45 @@ export const mixConnections = (plainInfo, connInfos) => {
  *
  * @param {Remote<NameHub>} agoricNames
  * @param {Record<string, string[]>} tokenMap
+ * @param {string[]} [chainNames] - Optional list of chain names to include
  */
 export const lookupInterchainInfo = async (
   agoricNames,
-  tokenMap = { agoric: ['ubld'] },
+  tokenMap = { agoric: ['ubld'], axelar: ['uaxl'] },
+  chainNames,
 ) => {
   await null;
+  trace('Looking up chain info from agoricNames');
+
   const plainInfos = /** @type {Record<string, ChainInfo>} */ (
     fromEntries(await E(E(agoricNames).lookup('chain')).entries())
   );
+  trace('Found chains in agoricNames:', Object.keys(plainInfos));
+
   const connInfos = /** @type {Record<string, IBCConnectionInfo>} */ (
     fromEntries(await E(E(agoricNames).lookup('chainConnection')).entries())
   );
 
-  const chainInfos = mixConnections(plainInfos, connInfos);
+  trace('Found connections:', Object.keys(connInfos));
+
+  // Filter to only requested chains if specified
+  let filteredInfos = plainInfos;
+  if (chainNames && chainNames.length > 0) {
+    trace('Filtering to requested chains:', chainNames);
+    filteredInfos = fromEntries(
+      entries(plainInfos).filter(([name]) => chainNames.includes(name)),
+    );
+    trace('Filtered chain count:', Object.keys(filteredInfos).length);
+  }
+
+  const chainInfos = mixConnections(filteredInfos, connInfos);
+
+  const assetInfo = makeAssetInfo(chainInfos, tokenMap);
+  trace('Generated asset info entries:', assetInfo.length);
 
   return harden({
     chainInfo: chainInfos,
-    assetInfo: makeAssetInfo(chainInfos, tokenMap),
+    assetInfo,
   });
 };
 

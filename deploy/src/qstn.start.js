@@ -9,6 +9,7 @@ import {
   startOrchContract,
 } from '../tools/orch.start.js';
 import { name, permit } from './qstn.contract.permit.js';
+import { Tracer } from './tracer.js';
 
 /**
  * @import {TypedPattern, Remote} from '@agoric/internal';
@@ -23,7 +24,7 @@ import { name, permit } from './qstn.contract.permit.js';
  * @import {ChainInfoPowers} from '../tools/chain-info.core.js';
  */
 
-const trace = makeTracer('Qstn-Starter', true);
+const trace = makeTracer(`${Tracer}-Starter`);
 
 /**
  * @typedef {{
@@ -75,9 +76,26 @@ export const makePrivateArgs = async (
   const { chainConfig, gmpAddresses } = config;
   const { agoricNames } = orchestrationPowers;
 
-  const { chainInfo, assetInfo } = await lookupInterchainInfo(agoricNames, {
-    agoric: ['ubld'],
-  });
+  // Get list of chains from config, plus agoric and axelar
+  // Only lowercase Cosmos chains (with cosmosId), keep EVM chains (with axelarId) capitalized
+  const chainNames = [
+    'agoric',
+    'axelar',
+    ...Object.entries(chainConfig).map(([name, config]) =>
+      'cosmosId' in config ? name.toLowerCase() : name,
+    ),
+  ];
+
+  trace('Requesting chain info for:', chainNames);
+
+  const { chainInfo, assetInfo } = await lookupInterchainInfo(
+    agoricNames,
+    { agoric: ['ubld'] },
+    chainNames,
+  );
+
+  trace('Final assetinfo', assetInfo);
+  trace('Final chainInfos', chainInfo);
 
   // Build both chainIds and contracts in a single iteration
   /** @type {AxelarId & CosmosId} */

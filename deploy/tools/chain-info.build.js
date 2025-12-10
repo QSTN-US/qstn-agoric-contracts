@@ -11,7 +11,11 @@ import { ChainInfoShape, IBCConnectionInfoShape } from '@agoric/orchestration';
 import fetchedChainInfo from '@agoric/orchestration/src/fetched-chain-info.js';
 import { M } from '@endo/patterns';
 import { parseArgs } from 'node:util';
-import { mockChainInfo } from '../test/utils/mock-chain.info.js';
+import {
+  MainnetEvmChains,
+  mockChainInfo,
+  TestNetEvmChains,
+} from '../test/utils/mock-chain.info.js';
 
 const { keys } = Object;
 
@@ -200,7 +204,7 @@ const makeAgd = (
  * @param {string} chainId of agoric chain
  * @param {string[]} peers bech32prefix:connection-12:channel-34:ustake
  * @param {{ agd: ReturnType<typeof makeAgd> }} io
- * @returns {Promise<Record<string, CosmosChainInfo>>} where
+ * @returns {Promise<Record<string, ChainInfo>>} where
  *   info.agoric.connections has a connection to each peeer
  */
 const getPeerChainInfo = async (chainId, peers, { agd }) => {
@@ -209,12 +213,11 @@ const getPeerChainInfo = async (chainId, peers, { agd }) => {
   const connections = {};
   const portId = 'transfer';
 
-  /** @type {Record<string, CosmosChainInfo>} */
-  const chainDetails = {};
+  /** @type {Record<string, ChainInfo>} */
+  let chainDetails = {};
 
   await null;
   for (const [peerName, myConn, myChan, denom] of parsePeers(peers)) {
-    console.debug(peerName, { denom });
     const connInfo = await agd
       .query(['ibc', 'connection', 'end', myConn])
       .then(x => x.connection);
@@ -223,7 +226,6 @@ const getPeerChainInfo = async (chainId, peers, { agd }) => {
       .query(['ibc', 'client', 'state', clientId])
       .then(x => x.client_state);
     const { chain_id: peerId } = clientState;
-    console.debug(peerName, { chainId: peerId, denom });
     chainDetails[peerName] = {
       namespace: 'cosmos',
       reference: peerId,
@@ -268,6 +270,12 @@ const getPeerChainInfo = async (chainId, peers, { agd }) => {
     bech32Prefix: 'agoric',
   };
 
+  if (chainId === 'agoricdev-25') {
+    chainDetails = { ...chainDetails, ...TestNetEvmChains };
+  } else if (chainId === 'agoric-3') {
+    chainDetails = { ...chainDetails, ...MainnetEvmChains };
+  }
+
   return harden(chainDetails);
 };
 
@@ -290,12 +298,14 @@ export default async (homeP, endowments) => {
   const { scriptArgs = [] } = endowments;
   const { values: flags } = parseBuilderArgs(scriptArgs);
   const { baseName } = flags;
-  let chainInfo = flags.chainInfo
-    ? harden(JSON.parse(flags.chainInfo))
-    : getMainnetChainInfo();
 
-  await null;
-  if (flags.net) {
+  let chainInfo;
+
+  if (!flags.net) {
+    chainInfo = flags.chainInfo
+      ? harden(JSON.parse(flags.chainInfo))
+      : getMainnetChainInfo();
+  } else {
     if (!(flags.peer && flags.peer.length) && flags.net !== 'local')
       throw Error('--peer required');
     // only import/use net access if asked with --net
@@ -306,12 +316,14 @@ export default async (homeP, endowments) => {
     );
     const agd = makeAgd({ execFileSync }).withOpts({ rpcAddrs });
     const dynChainInfo = await getPeerChainInfo(chainId, flags.peer, { agd });
-
-    chainInfo = harden({ ...chainInfo, ...dynChainInfo });
+    chainInfo = harden({ ...dynChainInfo });
   }
 
+  await null;
+
+  console.log(chainInfo);
+
   mustMatch(chainInfo, ChainInfosShape);
-  console.log('configured chains:', keys(chainInfo));
   const { writeCoreEval } = await makeHelpers(homeP, endowments);
   await writeCoreEval(baseName, utils =>
     defaultProposalBuilder(utils, chainInfo),
