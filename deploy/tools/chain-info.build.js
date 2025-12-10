@@ -200,7 +200,7 @@ const makeAgd = (
  * @param {string} chainId of agoric chain
  * @param {string[]} peers bech32prefix:connection-12:channel-34:ustake
  * @param {{ agd: ReturnType<typeof makeAgd> }} io
- * @returns {Promise<Record<string, CosmosChainInfo>>} where
+ * @returns {Promise<Record<string, ChainInfo>>} where
  *   info.agoric.connections has a connection to each peeer
  */
 const getPeerChainInfo = async (chainId, peers, { agd }) => {
@@ -209,7 +209,7 @@ const getPeerChainInfo = async (chainId, peers, { agd }) => {
   const connections = {};
   const portId = 'transfer';
 
-  /** @type {Record<string, CosmosChainInfo>} */
+  /** @type {Record<string, ChainInfo>} */
   const chainDetails = {};
 
   await null;
@@ -290,12 +290,14 @@ export default async (homeP, endowments) => {
   const { scriptArgs = [] } = endowments;
   const { values: flags } = parseBuilderArgs(scriptArgs);
   const { baseName } = flags;
-  let chainInfo = flags.chainInfo
-    ? harden(JSON.parse(flags.chainInfo))
-    : getMainnetChainInfo();
 
-  await null;
-  if (flags.net) {
+  let chainInfo;
+
+  if (!flags.net) {
+    chainInfo = flags.chainInfo
+      ? harden(JSON.parse(flags.chainInfo))
+      : getMainnetChainInfo();
+  } else {
     if (!(flags.peer && flags.peer.length) && flags.net !== 'local')
       throw Error('--peer required');
     // only import/use net access if asked with --net
@@ -306,12 +308,14 @@ export default async (homeP, endowments) => {
     );
     const agd = makeAgd({ execFileSync }).withOpts({ rpcAddrs });
     const dynChainInfo = await getPeerChainInfo(chainId, flags.peer, { agd });
-
-    chainInfo = harden({ ...chainInfo, ...dynChainInfo });
+    chainInfo = harden({ ...dynChainInfo });
   }
 
+  await null;
+
+  console.log(chainInfo);
+
   mustMatch(chainInfo, ChainInfosShape);
-  console.log('configured chains:', keys(chainInfo));
   const { writeCoreEval } = await makeHelpers(homeP, endowments);
   await writeCoreEval(baseName, utils =>
     defaultProposalBuilder(utils, chainInfo),

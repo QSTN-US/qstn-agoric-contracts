@@ -18,6 +18,7 @@ import {
   QstnPrivateArgsShape,
 } from './utils/type-guards.js';
 import { validatePrivateArgsAddresses } from './utils/address-validation.js';
+import { Tracer } from './utils/tracer.js';
 
 const { keys } = Object;
 /**
@@ -29,7 +30,7 @@ const { keys } = Object;
  * @import {QstnPrivateArgs, RemoteChannelInfo} from './utils/types.js';
  */
 
-const trace = makeTracer('Qstn-Contract');
+const trace = makeTracer(`${Tracer}-Contract`);
 
 /** @type {ContractMeta} */
 export const meta = {
