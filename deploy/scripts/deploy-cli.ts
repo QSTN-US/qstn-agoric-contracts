@@ -54,6 +54,7 @@ const main = async (
       .then(it => it.stdout.trim());
 
   await null;
+  // Parse CLI arguments: builder script path and optional key=value bindings
   const {
     values: { from, net, title, description = await getVersion() },
     positionals: [builder, ...bindings],
@@ -66,13 +67,66 @@ const main = async (
     throw Error(`Invalid net: ${net}. Must be 'mainnet', 'devnet', or 'local'`);
   }
 
-  // XXX ugh. what a pain.
+  // Set working directory to package root
   const pkg = path.join(url.fileURLToPath(import.meta.url), '../../');
   process.chdir(pkg);
 
-  // 1. build
   const pkgRd = makeFileRd(pkg, { fsp, path });
+
+  // Local network setup: Deploy chain-info before main contract
+  // This configures the chain registry with local network details
+  if (net === 'local') {
+    console.log('Running chain-info build for local network...');
+    const agoric = makeCmdRunner('npx', { execFile }).subCommand('agoric');
+
+    // Build the chain-info core-eval plan (generates bundles and manifest)
+    const chainInfoPlan = await runBuilder(
+      agoric,
+      pkgRd.join('tools/chain-info.build.js'),
+      ['--net=local'],
+      { cwd: pkgRd },
+    );
+    console.log('Chain-info build completed:', chainInfoPlan.name);
+
+    // Fetch network config and setup agd command runners
+    const {
+      chainName: chainId,
+      rpcAddrs: [node],
+    } = await fetchNetworkConfig(net, { fetch });
+    const agdq = makeCmdRunner('agd', { execFile }).withFlags('--node', node);
+    const agdTx = agdq.withFlags(
+      ...toCLIOptions(txFlags({ node, from, chainId })),
+      '--yes',
+    );
+
+    // Install each bundle to the chain's swingset kernel
+    for (const b of chainInfoPlan.bundles) {
+      const shortID = b.bundleID.slice(0, 8);
+      console.log('installing chain-info bundle', shortID, '...');
+      await waitForBlock(agdq);
+      const [{ txhash }] = await installBundles(agdTx, [b], pkgRd);
+      console.log('installed', shortID, txhash);
+    }
+
+    // Submit the core-eval proposal to execute the chain-info setup
+    const timeShort = new Date().toISOString().substring(11, 16);
+    await waitForBlock(agdq);
+    const chainInfoResult = await submitCoreEval(agdTx, [chainInfoPlan], {
+      title: `Chain Info ${timeShort}`,
+      description: 'Configure chain-info for local network',
+    });
+    console.log('Chain-info submitted:', chainInfoResult);
+
+    // Auto-vote to pass the proposal immediately on local network
+    console.log('Submitting vote for chain-info...');
+    const yarn = makeCmdRunner('yarn', { execFile });
+    await yarn.exec(['docker:make', 'vote']);
+    console.log('Chain-info vote submitted successfully');
+  }
+
+  // Step 1: Build the main contract core-eval plan
   const agoric = makeCmdRunner('npx', { execFile }).subCommand('agoric');
+  // Convert key=value bindings to --key value CLI options
   const opts = bindings
     .map(b => {
       const [n, v] = b.split('=', 2);
@@ -85,7 +139,7 @@ const main = async (
   });
   console.log(`${plan.name}.js`, 'etc.');
 
-  // 2. install bundles
+  // Step 2: Install contract bundles to the chain
   const {
     chainName: chainId,
     rpcAddrs: [node],
@@ -95,6 +149,7 @@ const main = async (
     ...toCLIOptions(txFlags({ node, from, chainId })),
     '--yes',
   );
+  // Each bundle contains the contract code and must be installed before core-eval
   for (const b of plan.bundles) {
     const shortID = b.bundleID.slice(0, 8);
     console.log('installing', shortID, '...');
@@ -103,7 +158,8 @@ const main = async (
     console.log('installed', shortID, txhash);
   }
 
-  const timeShort = new Date().toISOString().substring(11, 16); // XXX ambient
+  // Step 3: Submit the core-eval proposal to deploy the contract
+  const timeShort = new Date().toISOString().substring(11, 16);
   await waitForBlock(agdq);
   const info = await submitCoreEval(agdTx, [plan], {
     title: `${title} ${timeShort}`,
@@ -111,7 +167,7 @@ const main = async (
   });
   console.log(title, info);
 
-  // Auto-vote on local network
+  // Step 4: Auto-vote on local network to immediately pass the proposal
   if (net === 'local') {
     console.log('Local network detected, submitting vote...');
     const yarn = makeCmdRunner('yarn', { execFile });

@@ -42,7 +42,7 @@ harden(InvitationMakerI);
  */
 export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
   return zone.exoClassKit(
-    'AccountKit',
+    'QstnAccountKit',
     {
       transferWatcher: M.interface('TransferWatcher', {
         onFulfilled: M.call(M.undefined())

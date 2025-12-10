@@ -1,13 +1,12 @@
 node_modules
-startQstn.js
-startQstn-plan.json
-startQstn-permit.json
 tmp
 offer.json
 
-eval-register-interchain-bank-assets-permit.json
-eval-register-interchain-bank-assets-plan.json
-eval-register-interchain-bank-assets.js
+eval-*-permit.json
+eval-*-plan.json
+eval-*.js
+
+,tx.json
 
 bundles/
 dist/

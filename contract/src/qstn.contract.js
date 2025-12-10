@@ -70,12 +70,17 @@ export const contract = async (
     throw makeError('assetInfo must contain at least one asset');
   }
 
-  registerChainsAndAssets(
-    chainHub,
-    zcf.getTerms().brands,
-    passedChainInfo,
-    assetInfo,
-  );
+  if (chainHub.isEmpty()) {
+    trace('chainHub:', Object.keys(passedChainInfo));
+    registerChainsAndAssets(
+      chainHub,
+      zcf.getTerms().brands,
+      passedChainInfo,
+      assetInfo,
+    );
+  } else {
+    trace('chainHub already populated, using existing entries');
+  }
 
   const chainHubAdminFacet = prepareChainHubAdmin(zone, chainHub);
 

@@ -137,7 +137,7 @@ test('start qstn eval code without swingset', async t => {
   const { agoricNames } = bootstrap;
   const instance = (await E(agoricNames).lookup(
     'instance',
-    'qstn',
+    contractName,
   )) as Instance<StartFn>;
   t.log('found instance', instance);
   t.is(passStyleOf(instance), 'remotable');

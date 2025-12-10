@@ -25,7 +25,10 @@ import {
 import { BridgeId, makeTracer } from '@agoric/internal';
 import { E, Far } from '@endo/far';
 import type { Guarded } from '@endo/exo';
-import { defaultMockAckMap, errorAcknowledgments } from './ibc.mocks.js';
+import {
+  defaultMockAckMap,
+  errorAcknowledgments,
+} from './orchestration/ibc.mocks.ts';
 import { decodeProtobufBase64 } from '@agoric/orchestration/tools/protobuf-decoder.js';
 
 const trace = makeTracer('NetworkFakes');
