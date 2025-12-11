@@ -213,22 +213,22 @@ export const MainnetEvmChains = {
 export const TestNetEvmChains = {
   Avalanche: {
     namespace: 'eip155',
-    reference: '43114',
+    reference: '43113',
     cctpDestinationDomain: 1,
   },
   Ethereum: {
     namespace: 'eip155',
-    reference: '1',
+    reference: '11155111',
     cctpDestinationDomain: 0,
   },
   Optimism: {
     namespace: 'eip155',
-    reference: '10',
+    reference: '11155420',
     cctpDestinationDomain: 2,
   },
   Arbitrum: {
     namespace: 'eip155',
-    reference: '42161',
+    reference: '421614',
     cctpDestinationDomain: 3,
   },
   Base: {
