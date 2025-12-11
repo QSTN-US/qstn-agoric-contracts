@@ -76,14 +76,13 @@ export const makePrivateArgs = async (
   const { chainConfig, gmpAddresses } = config;
   const { agoricNames } = orchestrationPowers;
 
-  // Get list of chains from config, plus agoric and axelar
-  // Only lowercase Cosmos chains (with cosmosId), keep EVM chains (with axelarId) capitalized
+  // Get list of cosmos chains from config, plus agoric and axelar
   const chainNames = [
     'agoric',
     'axelar',
-    ...Object.entries(chainConfig).map(([name, config]) =>
-      'cosmosId' in config ? name.toLowerCase() : name,
-    ),
+    ...Object.entries(chainConfig)
+      .filter(([_, config]) => 'cosmosId' in config)
+      .map(([name, _]) => name.toLowerCase()),
   ];
 
   trace('Requesting chain info for:', chainNames);

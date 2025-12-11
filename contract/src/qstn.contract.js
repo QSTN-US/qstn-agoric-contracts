@@ -50,7 +50,7 @@ export const contract = async (
   zcf,
   privateArgs,
   zone,
-  { chainHub, orchestrateAll, zoeTools, vowTools },
+  { chainHub, orchestrateAll, orchestrate, zoeTools, vowTools },
 ) => {
   trace('Inside Contract');
   const { brands } = zcf.getTerms();
@@ -140,6 +140,7 @@ export const contract = async (
       chainIds,
       contracts,
       gmpAddresses,
+      vowTools,
     },
   );
 
@@ -149,14 +150,14 @@ export const contract = async (
     'Send PF',
 
     M.interface('Send PF', {
-      createLCA: M.callWhen().returns(M.any()),
+      createQstnAccountKit: M.callWhen().returns(M.any()),
     }),
 
     {
-      createLCA() {
+      createQstnAccountKit() {
         return zcf.makeInvitation(
           createLCA,
-          'makeQstnAccount',
+          'qstnAccountKitInvitation',
           undefined,
           proposalShape,
         );

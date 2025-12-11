@@ -11,23 +11,16 @@ import { ChainInfoShape, IBCConnectionInfoShape } from '@agoric/orchestration';
 import fetchedChainInfo from '@agoric/orchestration/src/fetched-chain-info.js';
 import { M } from '@endo/patterns';
 import { parseArgs } from 'node:util';
-import {
-  MainnetEvmChains,
-  mockChainInfo,
-  TestNetEvmChains,
-} from '../test/utils/mock-chain.info.js';
-
-const { keys } = Object;
+import { mockChainInfo } from '../test/utils/mock-chain.info.js';
 
 // TODO: factor out overlap with builders/scripts/orchestration/write-chain-info.js
 
 const sourceSpec = './chain-info.core.js';
 
 /**
- * @import {ParseArgsConfig} from 'node:util';
  * @import {CoreEvalBuilder, DeployScriptFunction} from '@agoric/deploy-script-support/src/externalTypes.js';
  * @import {TypedPattern} from '@agoric/internal';
- * @import {ChainInfo, CosmosChainInfo, IBCConnectionInfo} from '@agoric/orchestration';
+ * @import {ChainInfo, IBCConnectionInfo} from '@agoric/orchestration';
  * @import {IBCChannelID, IBCConnectionID} from '@agoric/vats';
  * @import {execFileSync} from 'child_process';
  * @import {ExecFileSyncOptionsWithStringEncoding} from 'node:child_process';
@@ -269,12 +262,6 @@ const getPeerChainInfo = async (chainId, peers, { agd }) => {
     connections,
     bech32Prefix: 'agoric',
   };
-
-  if (chainId === 'agoricdev-25') {
-    chainDetails = { ...chainDetails, ...TestNetEvmChains };
-  } else if (chainId === 'agoric-3') {
-    chainDetails = { ...chainDetails, ...MainnetEvmChains };
-  }
 
   return harden(chainDetails);
 };

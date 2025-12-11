@@ -182,17 +182,20 @@ export const QstnPrivateArgsShape = {
   .../** @type {CopyRecord} */ (OrchestrationPowersShape),
   marshaller: M.remotable('marshaller'),
   storageNode: M.remotable('storageNode'),
-  chainInfo: M.splitRecord({
-    ...fromEntries(
-      keys(ENABLED_EVM_CHAINS).map(chain => [chain, ChainInfoShape]),
-    ),
-    ...fromEntries(
-      keys(ENABLED_COSMOS_CHAINS).map(chain => [
-        chain.toLowerCase(),
-        ChainInfoShape,
-      ]),
-    ),
-  }),
+  chainInfo: M.splitRecord(
+    {
+      agoric: ChainInfoShape,
+      ...fromEntries(
+        keys(ENABLED_COSMOS_CHAINS).map(chain => [
+          chain.toLowerCase(),
+          ChainInfoShape,
+        ]),
+      ),
+    },
+    {
+      axelar: ChainInfoShape,
+    },
+  ),
   assetInfo: M.arrayOf([NonEmptyStringShape, DenomDetailShape]),
   chainIds: M.splitRecord({
     ...fromEntries(
