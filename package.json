@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "build:solidity": "cd solidity && yarn build",
+    "build:deploy": "cd deploy && yarn build",
     "docker:bash": "cd deploy; docker compose exec agd bash",
     "docker:make": "cd deploy; docker compose exec agd make -C /workspace/deploy",
     "lint": "prettier . --check",

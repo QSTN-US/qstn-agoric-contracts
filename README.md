@@ -1,6 +1,6 @@
 # QSTN Agoric DApp EVM
 
-A cross-chain survey platform built on Agoric with support for Avalanche, Osmosis, and Neutron. The platform enables decentralized survey creation, funding, and reward distribution across multiple blockchain networks using Axelar GMP and IBC.
+A cross-chain survey platform built on Agoric with support for multiple EVM chains (Avalanche, Ethereum, Optimism, Arbitrum, Base) and Cosmos chains (Osmosis, Neutron). The platform enables decentralized survey creation, funding, and reward distribution across multiple blockchain networks using Axelar GMP and IBC.
 
 ## Architecture
 
@@ -8,10 +8,10 @@ The repository contains four main contract implementations that work together to
 
 ### Repo Breakdown
 
-```
+```text
 qstn-agoric-dapp-evm/
 ├── contract/          # Agoric orchestration contract (JavaScript)
-├── solidity/          # Avalanche GMP-powered contract (Solidity)
+├── solidity/          # EVM GMP-powered contract (Solidity)
 ├── wasm/             # CosmWasm contracts (Rust)
 │   ├── quizzler-osmosis/
 │   └── quizzler-neutron/
@@ -20,7 +20,7 @@ qstn-agoric-dapp-evm/
 
 ### Cross-Chain Message Flow
 
-```
+```text
 ┌─────────┐         ┌──────────────┐         ┌─────────────┐
 │  User   │─────────▶│ Agoric Chain │─────────▶│ Target Chain│
 │ (Keplr) │         │ QSTN Router  │         │  Quizzler   │
@@ -41,21 +41,22 @@ The Agoric orchestration contract acts as the central router for cross-chain ope
 
 - Orchestrates cross-chain transactions via Agoric's chain abstraction
 - Handles ICA (Interchain Accounts) operations
-- Routes transactions to target chains (Avalanche, Osmosis, Neutron)
+- Routes transactions to EVM chains (via Axelar GMP) and Cosmos chains (via IBC)
 - Manages BLD token payments for survey funding
 
 **Main Files**:
 
-- `qstn.router.js` - Contract initialization and public invitation makers
+- `qstn.contract.js` - Contract initialization and public invitation makers
 - `qstn.flows.js` - Orchestration flows for sending transactions
+- `qstn-account-kit.js` - Account kit for managing LCAs
 
 **Contract Name**: `qstnRouterV1`
 
-### 2. Avalanche GMP Contract (QuizzlerGMP)
+### 2. EVM GMP Contract (QuizzlerGMP)
 
 **Location**: `solidity/contracts/QuizzlerGMP.sol`
 
-A Solidity contract deployed on Avalanche that receives cross-chain messages from Agoric via Axelar's General Message Passing (GMP).
+A Solidity contract deployable on any EVM chain (Avalanche, Ethereum, Optimism, Arbitrum, Base) that receives cross-chain messages from Agoric via Axelar's General Message Passing (GMP).
 
 **Key Features**:
 
@@ -117,11 +118,14 @@ Scripts for deploying and configuring the Agoric router contract.
 
 **Main Files**:
 
-- `start-contract.js` - Deploys the QSTN Router contract
-- `init-contract.js` - Initializes contract with chain configurations
-- `config.js` - Configuration constants
-- `get-chain-config.js` - Chain-specific configuration retrieval
-- `static-config.js` - Static chain and asset configurations
+- `qstn.start.js` - Deploys the QSTN Router contract
+- `qstn.build.js` - Contract build configuration
+- `qstn.contract.permit.js` - Contract permissions
+- `qstn.deploy.type.js` - Deployment type definitions
+
+**Test Configuration**:
+
+- `deploy/test/utils/mock-chain.info.js` - Chain and asset configurations for testing
 
 ## How It Works
 
@@ -130,7 +134,9 @@ Scripts for deploying and configuring the Agoric router contract.
 1. **Survey Creation (Agoric → Target Chain)**:
    - User connects Keplr wallet to Agoric chain
    - User funds survey with BLD tokens via the QSTN Router contract
-   - Router orchestrates cross-chain message to target chain (Avalanche/Osmosis/Neutron)
+   - Router orchestrates cross-chain message to target chain (EVM or Cosmos)
+   - For EVM chains: Message routed via Axelar GMP
+   - For Cosmos chains: Message routed via IBC
    - Target chain contract receives message and creates survey
 
 2. **Reward Distribution (Agoric → Target Chain)**:
@@ -141,10 +147,30 @@ Scripts for deploying and configuring the Agoric router contract.
 
 ### Supported Chains
 
-- **Agoric** (agoricdev-25): Router contract, orchestration layer
-- **Avalanche**: Via Axelar GMP bridge
-- **Osmosis**: Via IBC
-- **Neutron**: Via IBC
+#### Cosmos Chains (IBC)
+
+- **Agoric** (agoriclocal/devnet): Router contract, orchestration layer
+- **Osmosis** (osmo-test-5): Via IBC transfer channel
+- **Neutron** (pion-1): Via IBC transfer channel
+- **Axelar**: Via IBC for cross-chain messaging
+
+#### EVM Chains (Axelar GMP)
+
+**Mainnet**:
+
+- **Avalanche** (Chain ID: 43114)
+- **Ethereum** (Chain ID: 1)
+- **Optimism** (Chain ID: 10)
+- **Arbitrum** (Chain ID: 42161)
+- **Base** (Chain ID: 8453)
+
+**Testnet**:
+
+- **Avalanche Fuji** (Chain ID: 43113)
+- **Ethereum Sepolia** (Chain ID: 11155111)
+- **Optimism Sepolia** (Chain ID: 11155420)
+- **Arbitrum Sepolia** (Chain ID: 421614)
+- **Base Sepolia** (Chain ID: 84532)
 
 ## Installation
 
@@ -180,23 +206,36 @@ yarn build:deploy
 ### Deploy to Agoric DevNet
 
 ```bash
-# Deploy QSTN Router contract
-yarn deploy:qstnRouter
+cd deploy
 
-# Or deploy all contracts
-yarn deploy:contracts
+# First, deploy chain info
+yarn deploy:chain-info:devnet
+
+# Then, deploy QSTN Router contract
+yarn deploy:contract:devnet
+```
+
+### Deploy to Local Network
+
+```bash
+cd deploy
+
+# First, deploy chain info
+yarn deploy:chain-info:local
+
+# Then, deploy QSTN Router contract
+yarn deploy:contract:local
 ```
 
 ## Configuration
 
 ### Chain Configuration
 
-Chain and asset configurations are defined in `deploy/src/static-config.js`. The configuration includes:
+Chain and asset configurations are defined in `deploy/test/utils/mock-chain.info.js`. The configuration includes:
 
-- Chain IDs
-- RPC endpoints
-- IBC connection details
-- Asset denoms and brands
+- **Cosmos Chains**: Chain IDs, bech32 prefixes, IBC connection details, transfer channels
+- **EVM Chains**: Namespace (eip155), chain references (Chain IDs), CCTP destination domains
+- Separate configurations for mainnet and testnet EVM chains
 
 ### Environment Variables
 
