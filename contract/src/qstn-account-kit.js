@@ -99,7 +99,7 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
          *  messages: CrossChainContractMessage[]
          * }} offerArgs
          */
-        async sendTransactions(seat, offerArgs) {
+        sendTransactions(seat, offerArgs) {
           trace('Inside sendTransactions');
           return vowTools.asVow(async () => {
             // Track transfers for accurate recovery on failure
