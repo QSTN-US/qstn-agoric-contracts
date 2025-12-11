@@ -9,10 +9,12 @@ import { makeTracer } from '@agoric/internal';
 import { Tracer } from './utils/tracer.js';
 
 /**
+ * @import {GuestInterface} from '@agoric/async-flow';
  * @import {Orchestrator, OrchestrationFlow} from '@agoric/orchestration';
  * @import {MakeAccountKit} from './qstn-account-kit.js';
  * @import {ZCFSeat} from '@agoric/zoe/src/zoeService/zoe.js';
- * @import {ChainIds, ContractMaps, GMPAddresses, TransferChannels} from './utils/types.js';
+ * @import {VowTools} from '@agoric/vow'
+ * @import {ChainIds, ContractMaps, CrossChainContractMessage, GMPAddresses, TransferChannels} from './utils/types.js';
  */
 
 const trace = makeTracer(`${Tracer}-LCA-Flows`);
@@ -25,14 +27,26 @@ const trace = makeTracer(`${Tracer}-LCA-Flows`);
  *  transferChannels: TransferChannels,
  *  chainIds: ChainIds,
  *  contracts: ContractMaps,
- *  gmpAddresses: GMPAddresses
+ *  gmpAddresses: GMPAddresses,
+ *  vowTools: GuestInterface<VowTools>
  * }} ctx
  * @param {ZCFSeat} seat
+ * @param {{
+ * messages: CrossChainContractMessage[],
+ * }} offerArgs
  */
 export const createLCA = async (
   orch,
-  { makeAccountKit, transferChannels, gmpAddresses, chainIds, contracts },
+  {
+    makeAccountKit,
+    transferChannels,
+    gmpAddresses,
+    chainIds,
+    contracts,
+    vowTools,
+  },
   seat,
+  offerArgs,
 ) => {
   trace('Creating CrossChain LCA and monitoring transfers');
 
@@ -59,9 +73,12 @@ export const createLCA = async (
     gmpAddresses,
   });
 
-  trace('tap created successfully');
+  // Fund the LCA first
+  const { give } = seat.getProposal();
+  await vowTools.when(accountKit.holder.fundLCA(seat, give));
 
-  seat.exit();
+  // Then perform the transfer
+  await accountKit.holder.sendTransactions(seat, offerArgs);
 
   return harden({ invitationMakers: accountKit.invitationMakers });
 };

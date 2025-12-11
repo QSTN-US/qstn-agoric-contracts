@@ -101,134 +101,139 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
          */
         async sendTransactions(seat, offerArgs) {
           trace('Inside sendTransactions');
+          return vowTools.asVow(async () => {
+            // Track transfers for accurate recovery on failure
+            let transferredAmount = 0n;
+            const successfulTransfers = [];
+            let amt;
 
-          // Track transfers for accurate recovery on failure
-          let transferredAmount = 0n;
-          const successfulTransfers = [];
-          let amt;
+            await null;
+            try {
+              mustMatch(offerArgs, OfferArgsShape);
 
-          await null;
-          try {
-            mustMatch(offerArgs, OfferArgsShape);
+              const { messages } = offerArgs;
 
-            const { messages } = offerArgs;
+              trace('Offer Args:', JSON.stringify(offerArgs));
 
-            trace('Offer Args:', JSON.stringify(offerArgs));
+              // Get proposal from seat and extract amount
+              const { give } = seat.getProposal();
+              const [[_kw, _amt]] = entries(give);
+              amt = _amt;
 
-            // Get proposal from seat and extract amount
-            const { give } = seat.getProposal();
-            const [[_kw, _amt]] = entries(give);
-            amt = _amt;
+              // Validate transfer amount is positive
+              amt.value > 0n ||
+                Fail`IBC transfer amount must be greater than zero`;
 
-            // Validate transfer amount is positive
-            amt.value > 0n ||
-              Fail`IBC transfer amount must be greater than zero`;
+              // Add up total amount required for all chains
+              const totalRequired = messages.reduce(
+                (acc, msg) =>
+                  acc + BigInt(msg.amountForChain) + BigInt(msg.amountFee || 0),
+                0n,
+              );
 
-            // Add up total amount required for all chains
-            const totalRequired = messages.reduce(
-              (acc, msg) =>
-                acc + BigInt(msg.amountForChain) + BigInt(msg.amountFee || 0),
-              0n,
-            );
+              totalRequired === amt.value ||
+                Fail`Total amount required for all chains ${q(totalRequired)} does not match amount given ${q(amt.value)}`;
 
-            totalRequired === amt.value ||
-              Fail`Total amount required for all chains ${q(totalRequired)} does not match amount given ${q(amt.value)}`;
+              trace('_kw, amt', _kw, amt);
 
-            trace('_kw, amt', _kw, amt);
+              const { denom } = NonNullish(
+                this.state.assets.find(a => a.brand === amt.brand),
 
-            const { denom } = NonNullish(
-              this.state.assets.find(a => a.brand === amt.brand),
+                `${amt.brand} not registered in vbank`,
+              );
 
-              `${amt.brand} not registered in vbank`,
-            );
+              trace('amt and brand', amt.brand);
 
-            trace('amt and brand', amt.brand);
+              // Validate ALL messages in parallel and store results
+              trace('Validating all messages in parallel...');
 
-            // Validate ALL messages in parallel and store results
-            trace('Validating all messages in parallel...');
+              const validatedMessages = await Promise.all(
+                messages.map((msg, index) =>
+                  validateMessage(msg, this.state).then(result => ({
+                    ...result,
+                    message: msg,
+                    index,
+                  })),
+                ),
+              );
 
-            const validatedMessages = await Promise.all(
-              messages.map((msg, index) =>
-                validateMessage(msg, this.state).then(result => ({
-                  ...result,
-                  message: msg,
-                  index,
-                })),
-              ),
-            );
+              trace('All messages validated successfully');
 
-            trace('All messages validated successfully');
+              // Execute transfers sequentially using pre-validated data
+              for (const validated of validatedMessages) {
+                const { message, remoteChainId, memo, destinationAddress } =
+                  validated;
 
-            // Execute transfers sequentially using pre-validated data
-            for (const validated of validatedMessages) {
-              const { message, remoteChainId, memo, destinationAddress } =
-                validated;
+                const transferAmount =
+                  BigInt(message.amountForChain) +
+                  BigInt(message.amountFee || 0);
 
-              const transferAmount =
-                BigInt(message.amountForChain) + BigInt(message.amountFee || 0);
+                trace(
+                  `Initiating ${message.chainType === 'evm' ? 'GMP' : 'IBC'} Transfer...`,
+                );
+
+                trace(`DENOM of token: ${denom}`);
+
+                await this.state.localAccount.transfer(
+                  {
+                    value: /** @type {Bech32Address} */ (destinationAddress),
+                    encoding: 'bech32',
+                    chainId: remoteChainId,
+                  },
+                  {
+                    denom,
+                    value: transferAmount,
+                  },
+                  { memo },
+                );
+
+                // Track successful transfer
+                transferredAmount += transferAmount;
+
+                successfulTransfers.push({
+                  index: validated.index,
+                  amount: transferAmount,
+                  destination: destinationAddress,
+                });
+
+                trace(
+                  `${message.chainType === 'evm' ? 'GMP' : 'IBC'} Transaction sent successfully ✓`,
+                );
+              }
+            } catch (e) {
+              // Calculate remaining amount in localAccount
+              const remainingAmount = amt ? amt.value - transferredAmount : 0n;
 
               trace(
-                `Initiating ${message.chainType === 'evm' ? 'GMP' : 'IBC'} Transfer...`,
+                `ERROR: Transfer failed after ${successfulTransfers.length} successful transfers`,
               );
-
-              trace(`DENOM of token: ${denom}`);
-
-              await this.state.localAccount.transfer(
-                {
-                  value: /** @type {Bech32Address} */ (destinationAddress),
-                  encoding: 'bech32',
-                  chainId: remoteChainId,
-                },
-                {
-                  denom,
-                  value: transferAmount,
-                },
-                { memo },
-              );
-
-              // Track successful transfer
-              transferredAmount += transferAmount;
-
-              successfulTransfers.push({
-                index: validated.index,
-                amount: transferAmount,
-                destination: destinationAddress,
-              });
 
               trace(
-                `${message.chainType === 'evm' ? 'GMP' : 'IBC'} Transaction sent successfully ✓`,
+                `Transferred: ${transferredAmount}, Remaining: ${remainingAmount}`,
               );
+
+              // Refund any remaining tokens in localAccount
+              if (remainingAmount > 0n && amt) {
+                const remainingGive = AmountMath.make(
+                  amt.brand,
+                  remainingAmount,
+                );
+                await zoeTools.withdrawToSeat(
+                  this.state.localAccount,
+                  seat,
+                  remainingGive,
+                );
+              }
+
+              const errorMsg = `Transaction failed: ${q(e)}. ${successfulTransfers.length} transfers succeeded. ${transferredAmount} tokens sent, ${remainingAmount} tokens recovered.`;
+              trace(`ERROR: ${errorMsg}`);
+
+              if (!seat.hasExited()) seat.fail(errorMsg);
+              throw makeError(errorMsg);
+            } finally {
+              if (!seat.hasExited()) seat.exit();
             }
-          } catch (e) {
-            // Calculate remaining amount in localAccount
-            const remainingAmount = amt ? amt.value - transferredAmount : 0n;
-
-            trace(
-              `ERROR: Transfer failed after ${successfulTransfers.length} successful transfers`,
-            );
-
-            trace(
-              `Transferred: ${transferredAmount}, Remaining: ${remainingAmount}`,
-            );
-
-            // Refund any remaining tokens in localAccount
-            if (remainingAmount > 0n && amt) {
-              const remainingGive = AmountMath.make(amt.brand, remainingAmount);
-              await zoeTools.withdrawToSeat(
-                this.state.localAccount,
-                seat,
-                remainingGive,
-              );
-            }
-
-            const errorMsg = `Transaction failed: ${q(e)}. ${successfulTransfers.length} transfers succeeded. ${transferredAmount} tokens sent, ${remainingAmount} tokens recovered.`;
-            trace(`ERROR: ${errorMsg}`);
-
-            if (!seat.hasExited()) seat.fail(errorMsg);
-            throw makeError(errorMsg);
-          } finally {
-            if (!seat.hasExited()) seat.exit();
-          }
+          });
         },
         /**
          * @param {ZCFSeat} seat
