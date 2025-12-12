@@ -50,7 +50,7 @@ export const contract = async (
   zcf,
   privateArgs,
   zone,
-  { chainHub, orchestrateAll, orchestrate, zoeTools, vowTools },
+  { chainHub, orchestrateAll, zoeTools, vowTools },
 ) => {
   trace('Inside Contract');
   const { brands } = zcf.getTerms();
@@ -125,22 +125,21 @@ export const contract = async (
     });
   })();
 
-  const makeAccountKit = prepareAccountKit(zone.subZone('qstnTap'), {
+  const makeAccountKit = prepareAccountKit(zone.subZone('qstnAccount'), {
     zcf,
     vowTools,
     zoeTools,
   });
 
-  /** @type {{ createLCA: HostForGuest<typeof flows.createLCA> }} */
-  const { createLCA } = orchestrateAll(
-    { createLCA: flows.createLCA },
+  /** @type {{ qstnAccountTransaction: HostForGuest<typeof flows.qstnAccountTransaction> }} */
+  const { qstnAccountTransaction } = orchestrateAll(
+    { qstnAccountTransaction: flows.qstnAccountTransaction },
     {
       makeAccountKit,
       transferChannels,
       chainIds,
       contracts,
       gmpAddresses,
-      vowTools,
     },
   );
 
@@ -156,7 +155,7 @@ export const contract = async (
     {
       createQstnAccountKit() {
         return zcf.makeInvitation(
-          createLCA,
+          qstnAccountTransaction,
           'qstnAccountKitInvitation',
           undefined,
           proposalShape,
