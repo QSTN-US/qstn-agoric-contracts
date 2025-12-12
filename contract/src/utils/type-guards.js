@@ -139,11 +139,22 @@ export const OfferArgsShape = M.splitRecord(
   {},
 );
 
+/** Transfer channel shape for IBC channel info */
+const TransferChannelShape = M.splitRecord({
+  portId: M.string(),
+  channelId: M.string(), // channel-${number} format
+  counterPartyPortId: M.string(),
+  counterPartyChannelId: M.string(), // channel-${number} format
+  ordering: M.scalar(), // Order enum
+  state: M.scalar(), // State enum
+  version: M.string(),
+});
+
 /** @type {TypedPattern<RemoteChannelInfo>} */
 export const RemoteChannelInfoShape = {
   localDenom: M.string(),
   remoteChainInfo: ChainInfoShape,
-  transferChannel: M.any(),
+  transferChannel: TransferChannelShape,
   remoteDenom: M.string(),
 };
 
@@ -159,23 +170,58 @@ const CosmosContractAddressesShape = M.splitRecord({
   quizzler: NonEmptyStringShape,
 });
 
+/** @type {TypedPattern<GMPAddresses>} */
+const GmpAddressesShape = M.splitRecord({
+  AXELAR_GMP: NonEmptyStringShape,
+  AXELAR_GAS: NonEmptyStringShape,
+});
+
+/** ChainIds shape mapping chain names to chain IDs */
+const ChainIdsShape = M.splitRecord({
+  ...fromEntries(
+    keys(ENABLED_EVM_CHAINS).map(chain => [chain, NonEmptyStringShape]),
+  ),
+  ...fromEntries(
+    keys(ENABLED_COSMOS_CHAINS).map(chain => [chain, NonEmptyStringShape]),
+  ),
+});
+
+/** Contracts shape mapping chain names to contract addresses */
+const ContractsShape = M.splitRecord({
+  ...fromEntries(
+    keys(ENABLED_EVM_CHAINS).map(chain => [chain, EVMContractAddressesShape]),
+  ),
+  ...fromEntries(
+    keys(ENABLED_COSMOS_CHAINS).map(chain => [
+      chain,
+      CosmosContractAddressesShape,
+    ]),
+  ),
+});
+
+/** TransferChannels shape for IBC transfer channel info */
+const TransferChannelsShape = M.splitRecord(
+  {
+    Osmosis: RemoteChannelInfoShape,
+    Neutron: RemoteChannelInfoShape,
+  },
+  {
+    Axelar: RemoteChannelInfoShape,
+  },
+);
+
 /** @type {TypedPattern<AccountTapState>} */
 export const AccountKitStateShape = {
   localChainAddress: CosmosChainAddressShape,
   localChainId: M.string(),
   localAccount: M.remotable('LocalAccount'),
   assets: M.any(),
-  transferChannels: M.any(),
-  chainIds: M.any(),
-  contracts: M.any(),
+  transferChannels: TransferChannelsShape,
+  chainIds: ChainIdsShape,
+  contracts: ContractsShape,
+  gmpAddresses: GmpAddressesShape,
 };
 harden(AccountKitStateShape);
-
-/** @type {TypedPattern<GMPAddresses>} */
-const GmpAddressesShape = M.splitRecord({
-  AXELAR_GMP: NonEmptyStringShape,
-  AXELAR_GAS: NonEmptyStringShape,
-});
 
 /** @type {TypedPattern<QstnPrivateArgs>} */
 export const QstnPrivateArgsShape = {
@@ -197,25 +243,8 @@ export const QstnPrivateArgsShape = {
     },
   ),
   assetInfo: M.arrayOf([NonEmptyStringShape, DenomDetailShape]),
-  chainIds: M.splitRecord({
-    ...fromEntries(
-      keys(ENABLED_EVM_CHAINS).map(chain => [chain, NonEmptyStringShape]),
-    ),
-    ...fromEntries(
-      keys(ENABLED_COSMOS_CHAINS).map(chain => [chain, NonEmptyStringShape]),
-    ),
-  }),
-  contracts: M.splitRecord({
-    ...fromEntries(
-      keys(ENABLED_EVM_CHAINS).map(chain => [chain, EVMContractAddressesShape]),
-    ),
-    ...fromEntries(
-      keys(ENABLED_COSMOS_CHAINS).map(chain => [
-        chain,
-        CosmosContractAddressesShape,
-      ]),
-    ),
-  }),
+  chainIds: ChainIdsShape,
+  contracts: ContractsShape,
   gmpAddresses: GmpAddressesShape,
 };
 

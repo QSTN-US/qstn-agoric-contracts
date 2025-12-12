@@ -2,6 +2,7 @@ CHAINID=agoriclocal
 USER1ADDR=$(shell agd keys show user1 -a --keyring-backend="test")
 ACCT_ADDR=$(USER1ADDR)
 BLD=000000ubld
+IST=000000uist
 
 ATOM_DENOM=ibc/BA313C4A19DFBF943586C0387E6B11286F9E416B4DD27574E6909CABE0E342FA
 ATOM=000000$(ATOM_DENOM)
@@ -30,6 +31,19 @@ FUNDS=321$(BLD)
 fund-acct:
 	agd tx bank send validator $(ACCT_ADDR) $(FUNDS) \
 	  $(SIGN_BROADCAST_OPTS) \
+	  -o json >,tx.json
+	jq '{code: .code, height: .height}' ,tx.json
+
+transfer-to:
+	agd tx bank send user1 agoric1fhyal0fl5ydafjng6dj0nh4wrrnaxcfy09ftgn 10$(IST) \
+		$(SIGN_BROADCAST_OPTS) \
+	  -o json >,tx.json
+	jq '{code: .code, height: .height}' ,tx.json
+
+FUNDS=321$(BLD)
+fund-to:
+	agd tx bank send validator agoric1fhyal0fl5ydafjng6dj0nh4wrrnaxcfy09ftgn $(FUNDS) \
+		$(SIGN_BROADCAST_OPTS) \
 	  -o json >,tx.json
 	jq '{code: .code, height: .height}' ,tx.json
 
