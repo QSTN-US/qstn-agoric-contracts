@@ -106,6 +106,7 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
             let transferredAmount = 0n;
             const successfulTransfers = [];
             let amt;
+            let keyword;
 
             await null;
             try {
@@ -117,7 +118,8 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
 
               // Get proposal from seat and extract amount
               const { give } = seat.getProposal();
-              const [[_kw, _amt]] = entries(give);
+              const [[kw, _amt]] = entries(give);
+              keyword = kw;
               amt = _amt;
 
               // Validate transfer amount is positive
@@ -134,7 +136,7 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
               totalRequired === amt.value ||
                 Fail`Total amount required for all chains ${q(totalRequired)} does not match amount given ${q(amt.value)}`;
 
-              trace('_kw, amt', _kw, amt);
+              trace('keyword, amt', keyword, amt);
 
               const { denom } = NonNullish(
                 this.state.assets.find(a => a.brand === amt.brand),
@@ -213,16 +215,14 @@ export const prepareAccountKit = (zone, { zcf, vowTools, zoeTools }) => {
               );
 
               // Refund any remaining tokens in localAccount
-              if (remainingAmount > 0n && amt) {
+              if (remainingAmount > 0n && amt && keyword) {
                 const remainingGive = AmountMath.make(
                   amt.brand,
                   remainingAmount,
                 );
-                await zoeTools.withdrawToSeat(
-                  this.state.localAccount,
-                  seat,
-                  remainingGive,
-                );
+                await zoeTools.withdrawToSeat(this.state.localAccount, seat, {
+                  [keyword]: remainingGive,
+                });
               }
 
               const errorMsg = `Transaction failed: ${q(e)}. ${successfulTransfers.length} transfers succeeded. ${transferredAmount} tokens sent, ${remainingAmount} tokens recovered.`;
