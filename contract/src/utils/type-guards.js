@@ -264,7 +264,7 @@ export const makeNatAmountShape = (brand, min) =>
  * @param {Brand<'nat'>} bld
  */
 export const makeProposalShape = bld => {
-  const $Shape = makeNatAmountShape(bld);
+  const $Shape = makeNatAmountShape(bld, 20000n);
 
   return M.splitRecord(
     { want: {}, give: M.splitRecord({}, { Deposit: $Shape }, {}) },

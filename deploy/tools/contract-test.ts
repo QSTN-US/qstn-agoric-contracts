@@ -257,7 +257,7 @@ export const setupOrchestrationTest = async ({
   );
 
   const chainInfo = harden(() => {
-    const { agoric, osmosis, neutron } =
+    const { agoric, osmosis, neutron, axelar } =
       withChainCapabilities(fetchedChainInfo);
     const { ethereum, solana } = objectMap(cctpChainInfo, v => ({
       ...v,
@@ -266,6 +266,7 @@ export const setupOrchestrationTest = async ({
     }));
     return {
       agoric,
+      axelar,
       osmosis,
       neutron,
       ethereum,
