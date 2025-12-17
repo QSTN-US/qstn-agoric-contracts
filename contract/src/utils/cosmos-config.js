@@ -34,7 +34,7 @@ export const CosmosChainIdMap = harden(
  */
 export const quizzlerAddresses = harden({
   mainnet: {
-    Osmosis: 'osmo1',
+    Osmosis: 'osmo1jzvuj8kgpw8969g92d834mydc4y0jt9d3pmm7kgvkhpql8x3jnvs4t4pq6',
     Neutron:
       'neutron1em4guhq7hvheehl3wqm44slngckg6e0338utfrl9yx8tt0mmtgsq5x9fgx',
   },
