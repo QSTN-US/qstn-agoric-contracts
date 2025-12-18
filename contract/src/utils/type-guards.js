@@ -263,7 +263,7 @@ export const makeProposalShape = bld => {
   const $Shape = makeNatAmountShape(bld, 200000n);
 
   return M.splitRecord(
-    { want: {}, give: M.splitRecord({ Deposit: $Shape }) },
+    { want: {}, give: { Deposit: $Shape } },
     { exit: M.any() },
     {},
   );
