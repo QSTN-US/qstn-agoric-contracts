@@ -81,7 +81,7 @@ const build = async (homeP, endowments) => {
     },
   });
 
-  const isMainnet = flags.net === 'mainnet';
+  const isMainnet = flags.net === 'followmain';
   const config = configs[isMainnet ? 'mainnet' : 'testnet'];
 
   for (const [chain, chainConfig] of Object.entries(config.chainConfig)) {
