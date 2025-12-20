@@ -274,7 +274,7 @@ const pickKeys = (obj, wanted) =>
 
 /** @param {Array<keyof typeof fetchedChainInfo>} chains */
 const getMainnetChainInfo = (
-  chains = ['agoric', 'osmosis', 'axelar', 'neutron'],
+  chains = ['agoric', 'axelar', 'noble', 'neutron', 'osmosis'],
 ) => {
   console.log('using static mainnet config');
   return harden(pickKeys(fetchedChainInfo, chains));
