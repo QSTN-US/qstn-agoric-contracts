@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "esbuild ../contract/src/qstn.contract.js --bundle --platform=node --format=esm --main-fields=main --outfile=dist/qstn.contract.bundle.js --metafile=dist/qstn.contract.meta.json",
-    "deploy:chain-info:devnet": "scripts/deploy-cli.ts tools/chain-info.build.js --net=devnet peer=axelar:connection-19:channel-315:uaxl peer=osmosis:connection-6:channel-5:uosmo peer=neutron:connection-9:channel-7:untrn",
+    "deploy:chain-info:devnet": "scripts/deploy-cli.ts tools/chain-info.build.js --net=devnet peer=axelar:connection-19:channel-315:uaxl peer=osmosis:connection-6:channel-5:uosmo peer=neutron:connection-9:channel-7:untrn peer=noble:connection-13:channel-11:uusdc",
     "deploy:contract:devnet": "yarn build && scripts/deploy-cli.ts src/qstn.build.js --net=devnet",
     "deploy:contract:local": "yarn build && scripts/deploy-cli.ts src/qstn.build.js --net=local",
     "deploy:chain-info:local": "scripts/deploy-cli.ts tools/chain-info.build.js --net=local --title 'Deploy chain info'",
