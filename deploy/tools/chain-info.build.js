@@ -288,7 +288,7 @@ export default async (homeP, endowments) => {
 
   let chainInfo;
 
-  if (!flags.net) {
+  if (!flags.net || flags.net === 'followmain') {
     chainInfo = flags.chainInfo
       ? harden(JSON.parse(flags.chainInfo))
       : getMainnetChainInfo();

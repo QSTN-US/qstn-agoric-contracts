@@ -56,15 +56,19 @@ const main = async (
   await null;
   // Parse CLI arguments: builder script path and optional key=value bindings
   const {
-    values: { from, net, title, description = await getVersion() },
+    values: { from, net, title, description: descriptionArg },
     positionals: [builder, ...bindings],
   } = parseArgs({ args: argv.slice(2), options, allowPositionals: true }) as {
     positionals: string[];
     values: ParsedArgs;
   };
+
+  const description = descriptionArg || (await getVersion());
   if (!builder) throw Error(USAGE);
-  if (!['mainnet', 'devnet', 'local'].includes(net)) {
-    throw Error(`Invalid net: ${net}. Must be 'mainnet', 'devnet', or 'local'`);
+  if (!['followmain', 'devnet', 'local'].includes(net)) {
+    throw Error(
+      `Invalid net: ${net}. Must be 'followmain', 'devnet', or 'local'`,
+    );
   }
 
   // Set working directory to package root
@@ -102,6 +106,7 @@ const main = async (
     ...toCLIOptions(txFlags({ node, from, chainId })),
     '--yes',
   );
+
   // Each bundle contains the contract code and must be installed before core-eval
   for (const b of plan.bundles) {
     const shortID = b.bundleID.slice(0, 8);

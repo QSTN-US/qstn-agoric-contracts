@@ -21,6 +21,8 @@
     "deploy:contract:devnet": "yarn build && scripts/deploy-cli.ts src/qstn.build.js --net=devnet",
     "deploy:contract:local": "yarn build && scripts/deploy-cli.ts src/qstn.build.js --net=local",
     "deploy:chain-info:local": "scripts/deploy-cli.ts tools/chain-info.build.js --net=local --title 'Deploy chain info'",
+    "deploy:chain-info:mainnet": "scripts/deploy-cli.ts tools/chain-info.build.js --net=followmain --description 'Chain Info Update'",
+    "deploy:contract:mainnet": "yarn build && scripts/deploy-cli.ts src/qstn.build.js --net=followmain --description 'Deploy Qstn Contract'",
     "docker:make": "docker compose exec agd make -C /workspace/deploy",
     "test": "yarn build && ava",
     "lint-fix": "yarn lint:eslint --fix",
